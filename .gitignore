@@ -1,0 +1,50 @@
+# =========================
+# Unity
+# =========================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+MemoryCaptures/
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vsconfig
+
+# =========================
+# Plastic SCM
+# =========================
+.plastic/
+
+# =========================
+# Custom / AI / Local Tools
+# =========================
+.unity_agent_chroma/
+DevTools/
+ProjectKnowledge.json
+ignore.conf
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db

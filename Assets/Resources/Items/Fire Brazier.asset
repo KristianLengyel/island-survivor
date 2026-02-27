@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6672cfc2f14e7df49b8c984432752307, type: 3}
+  m_Name: Fire Brazier
+  m_EditorClassIdentifier: 
+  tile: {fileID: 0}
+  type: 4
+  actionType: 4
+  range: {x: 5, y: 4}
+  placementCondition: 2
+  stackable: 1
+  image: {fileID: -1979000931, guid: 47f21df1651ec534da8e8e333e75be76, type: 3}
+  prefab: {fileID: 7893476453959982456, guid: efb3783179024cf4ca5034562418688c, type: 3}

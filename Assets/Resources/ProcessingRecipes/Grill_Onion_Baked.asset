@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4091141f361558f4db5d699c3a5f9202, type: 3}
+  m_Name: Grill_Onion_Baked
+  m_EditorClassIdentifier: Assembly-CSharp::ProcessingRecipe
+  processor: 0
+  inputs:
+  - item: {fileID: 11400000, guid: 31ecf62ce19ab3642845046bbb2d3e56, type: 2}
+    amount: 1
+  output: {fileID: 11400000, guid: 5490f7fccdba2c3408080ef220e5154d, type: 2}
+  processTime: 10
+  inputOverlaySprite: {fileID: -1199510042738825823, guid: 2332778c320804a4e8326dbe07bf0008, type: 3}
+  outputOverlaySprite: {fileID: 4072282278962463262, guid: 2332778c320804a4e8326dbe07bf0008, type: 3}

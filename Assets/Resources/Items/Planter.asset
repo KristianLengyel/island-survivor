@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6672cfc2f14e7df49b8c984432752307, type: 3}
+  m_Name: Planter
+  m_EditorClassIdentifier: 
+  tile: {fileID: 0}
+  type: 4
+  actionType: 4
+  placementCondition: 2
+  range: {x: 5, y: 4}
+  stackable: 1
+  image: {fileID: -338963111351495320, guid: 9d27a8d007242414fae03496e5ce71e1, type: 3}
+  prefab: {fileID: 7291617402815217158, guid: efbf90159b9988f4c9d944a7e35c876a, type: 3}

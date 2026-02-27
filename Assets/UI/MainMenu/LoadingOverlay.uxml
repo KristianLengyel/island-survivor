@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="LoadingOverlay.uss" />
+
+  <ui:VisualElement name="viewport" class="viewport">
+    <ui:VisualElement name="screen" class="screen">
+      <ui:VisualElement name="overlay" class="loadingOverlay">
+        <ui:VisualElement class="loadingPanel">
+          <ui:Label name="loadingLabel" text="LOADING..." class="loadingText" />
+          <ui:Label name="loadingSub" text="Preparing world" class="loadingSub" />
+        </ui:VisualElement>
+      </ui:VisualElement>
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

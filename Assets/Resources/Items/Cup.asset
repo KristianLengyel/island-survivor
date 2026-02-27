@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4017414d3b174d4eac56a4a7ec8c2bb, type: 3}
+  m_Name: Cup
+  m_EditorClassIdentifier: 
+  tile: {fileID: 0}
+  type: 0
+  actionType: 3
+  placementCondition: 0
+  range: {x: 5, y: 4}
+  stackable: 0
+  image: {fileID: -1943651063, guid: f602d1f4fa116d1489cf23df5410b3ae, type: 3}
+  prefab: {fileID: 0}
+  fillSprites:
+  - {fileID: -1943651063, guid: f602d1f4fa116d1489cf23df5410b3ae, type: 3}
+  - {fileID: -1841392096, guid: f602d1f4fa116d1489cf23df5410b3ae, type: 3}
+  saltFillSprites:
+  - {fileID: -1943651063, guid: f602d1f4fa116d1489cf23df5410b3ae, type: 3}
+  - {fileID: 2047124027, guid: f602d1f4fa116d1489cf23df5410b3ae, type: 3}
+  maxFillCapacity: 1

@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/PauseMenu/PauseMenu.uss?fileID=7433441132597879392&amp;guid=d2658a84388551f4e869d38a721dbb74&amp;type=3#PauseMenu"/>
+    <ui:VisualElement name="overlay" class="overlay">
+        <ui:VisualElement class="centerWrap">
+            <ui:VisualElement name="mainPanel" class="panel">
+                <ui:Label text="PAUSED" class="title"/>
+                <ui:Button name="resumeBtn" text="Back to game" class="btn"/>
+                <ui:Button name="optionsBtn" text="Options" class="btn"/>
+                <ui:Button name="saveBtn" text="Save" class="btn"/>
+                <ui:Button name="quitBtn" text="Save and Quit to Menu" class="btn"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="optionsPanel" class="panel">
+                <ui:Label text="OPTIONS" class="title"/>
+                <ui:Label text="(hook your options UI here later)" class="hint"/>
+                <ui:Button name="backFromOptionsBtn" text="Back" class="btn"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

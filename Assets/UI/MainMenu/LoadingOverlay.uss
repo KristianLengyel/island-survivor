@@ -1,0 +1,59 @@
+.viewport {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: #000000;
+}
+
+.screen {
+    width: 320px;
+    height: 180px;
+    position: relative;
+}
+
+.loadingOverlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    justify-content: center;
+    align-items: center;
+
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+.loadingPanel {
+    width: 220px;
+    height: 70px;
+
+    justify-content: center;
+    align-items: center;
+
+    background-color: rgba(0, 0, 0, 0.35);
+
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+
+    border-left-color: rgba(255, 255, 255, 0.30);
+    border-right-color: rgba(255, 255, 255, 0.30);
+    border-top-color: rgba(255, 255, 255, 0.30);
+    border-bottom-color: rgba(255, 255, 255, 0.30);
+}
+
+.loadingText {
+    unity-text-align: middle-center;
+    font-size: 14px;
+    unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.loadingSub {
+    margin-top: 6px;
+    unity-text-align: middle-center;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+}

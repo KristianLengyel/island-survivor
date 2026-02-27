@@ -1,0 +1,104 @@
+.overlay {
+	display: none;
+
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+
+	width: 100%;
+	height: 100%;
+
+	background-color: rgba(0, 0, 0, 0.392);
+
+	align-items: center;
+	justify-content: center;
+}
+
+.centerWrap {
+	width: 100%;
+	height: 100%;
+
+	align-items: center;
+	justify-content: center;
+}
+
+.panel {
+	width: 220px;
+
+	padding-left: 8px;
+	padding-right: 8px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+
+	background-color: rgba(0, 0, 0, 0.0);
+	border-radius: 0px;
+
+	row-gap: 6px;
+
+	align-items: stretch;
+	justify-content: center;
+}
+
+.title {
+	font-size: 16px;
+	-unity-font-style: bold;
+	color: rgba(255, 255, 255, 0.95);
+
+	margin-bottom: 4px;
+
+	unity-text-align: middle-center;
+}
+
+.hint {
+	font-size: 10px;
+	color: rgba(255, 255, 255, 0.75);
+
+	margin-bottom: 6px;
+
+	unity-text-align: middle-center;
+}
+
+.btn {
+	width: 100%;
+	height: 26px;
+
+	border-radius: 0px;
+
+	background-color: rgba(0, 0, 0, 0.60);
+
+	color: rgba(255, 255, 255, 0.92);
+	font-size: 12px;
+
+	justify-content: center;
+	align-items: center;
+
+	border-left-width: 1px;
+	border-right-width: 1px;
+	border-top-width: 1px;
+	border-bottom-width: 1px;
+
+	border-left-color: rgba(255, 255, 255, 0.12);
+	border-right-color: rgba(255, 255, 255, 0.12);
+	border-top-color: rgba(255, 255, 255, 0.12);
+	border-bottom-color: rgba(255, 255, 255, 0.12);
+
+	flex-grow: 0;
+	flex-shrink: 0;
+}
+
+.btn:hover {
+	background-color: rgba(0, 0, 0, 0.72);
+}
+
+.btn:active {
+	background-color: rgba(0, 0, 0, 0.85);
+}
+
+.btn:focus {
+	border-left-color: rgba(255, 255, 255, 0.35);
+	border-right-color: rgba(255, 255, 255, 0.35);
+	border-top-color: rgba(255, 255, 255, 0.35);
+	border-bottom-color: rgba(255, 255, 255, 0.35);
+}

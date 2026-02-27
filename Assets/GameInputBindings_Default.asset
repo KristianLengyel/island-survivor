@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a5344254cf2beb479591b2a2aa6d2ae, type: 3}
+  m_Name: GameInputBindings_Default
+  m_EditorClassIdentifier: Assembly-CSharp::GameInputBindings
+  inventoryToggle: 9
+  buildMenuToggle: 116
+  cancel: 27
+  interact: 101
+  mapToggle: 109
+  quickSave: 286
+  quickLoad: 290
+  toggleRain: 114
+  toggleFog: 102
+  pickup: 112
+  putdown: 111
+  slot1: 49
+  slot2: 50
+  slot3: 51
+  slot4: 52
+  slot5: 53
+  slot6: 54
+  leftShift: 304
+  rightShift: 303
+  leftCtrl: 306
+  rightCtrl: 305
+  horizontalAxis: Horizontal
+  verticalAxis: Vertical
+  scrollAxis: Mouse ScrollWheel

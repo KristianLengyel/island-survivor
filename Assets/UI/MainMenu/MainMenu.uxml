@@ -1,0 +1,56 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="MainMenu.uss" />
+
+  <ui:VisualElement name="viewport" class="viewport">
+    <ui:VisualElement name="screen" class="screen">
+
+      <ui:VisualElement name="dim" class="dim" />
+
+      <ui:VisualElement name="mainPanel" class="panel mainPanel">
+        <ui:Button name="continueBtn" class="pxBtn">
+          <ui:VisualElement class="capLeft" />
+          <ui:VisualElement class="mid" />
+          <ui:VisualElement class="capRight" />
+          <ui:Label text="CONTINUE" class="pxBtnLabel" />
+        </ui:Button>
+
+        <ui:Button name="newGameBtn" class="pxBtn">
+          <ui:VisualElement class="capLeft" />
+          <ui:VisualElement class="mid" />
+          <ui:VisualElement class="capRight" />
+          <ui:Label text="NEW GAME" class="pxBtnLabel" />
+        </ui:Button>
+
+        <ui:Button name="optionsBtn" class="pxBtn">
+          <ui:VisualElement class="capLeft" />
+          <ui:VisualElement class="mid" />
+          <ui:VisualElement class="capRight" />
+          <ui:Label text="OPTIONS" class="pxBtnLabel" />
+        </ui:Button>
+
+        <ui:Button name="quitBtn" class="pxBtn">
+          <ui:VisualElement class="capLeft" />
+          <ui:VisualElement class="mid" />
+          <ui:VisualElement class="capRight" />
+          <ui:Label text="QUIT" class="pxBtnLabel" />
+        </ui:Button>
+      </ui:VisualElement>
+
+      <ui:VisualElement name="optionsPanel" class="panel optionsPanel">
+        <ui:Label text="OPTIONS" class="pxOptionsTitle" />
+
+        <ui:VisualElement class="optionsContent">
+          <ui:Label text="(hook settings here later)" class="pxOptionsText" />
+        </ui:VisualElement>
+
+        <ui:Button name="backFromOptionsBtn" class="pxBtn">
+          <ui:VisualElement class="capLeft" />
+          <ui:VisualElement class="mid" />
+          <ui:VisualElement class="capRight" />
+          <ui:Label text="BACK" class="pxBtnLabel" />
+        </ui:Button>
+      </ui:VisualElement>
+
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>
