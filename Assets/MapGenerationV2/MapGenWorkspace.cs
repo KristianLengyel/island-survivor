@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public sealed class MapGenWorkspace
@@ -22,6 +23,15 @@ public sealed class MapGenWorkspace
 
 	public List<int> tmpCellsA;
 	public List<int> tmpCellsB;
+
+	public Vector2[] islandCenters;
+	public float[] islandRadii;
+	public int islandCount;
+
+	public int[] islandGrid;
+	public int islandGridW;
+	public int islandGridH;
+	public float islandCellSize;
 
 	public int size;
 	public int pad;
@@ -58,6 +68,14 @@ public sealed class MapGenWorkspace
 
 		tmpCellsA = new List<int>(n / 8);
 		tmpCellsB = new List<int>(n / 8);
+
+		islandCenters = new Vector2[256];
+		islandRadii = new float[256];
+		islandGrid = new int[1];
+		islandCount = 0;
+		islandGridW = 0;
+		islandGridH = 0;
+		islandCellSize = 1f;
 	}
 
 	public void EnsureComponentCapacity(int labelMaxInclusive)
@@ -70,5 +88,29 @@ public sealed class MapGenWorkspace
 			componentCounts = new int[newLen];
 			componentTouchesBorder = new byte[newLen];
 		}
+	}
+
+	public void EnsureIslandCapacity(int count)
+	{
+		if (islandCenters == null || islandCenters.Length < count)
+		{
+			int newLen = islandCenters == null ? 256 : islandCenters.Length;
+			while (newLen < count) newLen <<= 1;
+			islandCenters = new Vector2[newLen];
+			islandRadii = new float[newLen];
+		}
+	}
+
+	public void EnsureIslandGrid(int gridW, int gridH)
+	{
+		int need = Mathf.Max(1, gridW * gridH);
+		if (islandGrid == null || islandGrid.Length < need)
+		{
+			int newLen = islandGrid == null ? 1 : islandGrid.Length;
+			while (newLen < need) newLen <<= 1;
+			islandGrid = new int[newLen];
+		}
+		islandGridW = gridW;
+		islandGridH = gridH;
 	}
 }

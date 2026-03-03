@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 714f46d1aabc8af42acf22c1dc698536, type: 3}
+  m_Name: Rocky
+  m_EditorClassIdentifier: Assembly-CSharp::BiomeDefinitionV3
+  biomeType: 4
+  biomeName: Rocky
+  landTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  grassTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  landVariants: []
+  grassVariants: []
+  palmPrefab: {fileID: 0}
+  palmSpawnChance: 0.65
+  palmMinDistance: 6
+  palmCoastMin: 3
+  palmCoastMax: 28
+  rockPrefab: {fileID: 7779434712979294630, guid: eefd962e81f15d143bc56a416c79144f, type: 3}
+  rockSpawnChance: 0.1
+  seaweedDensityMultiplier: 1
+  landColor: {r: 0.6981132, g: 0.6336698, b: 0.5782485, a: 1}
+  grassColor: {r: 0.4490565, g: 0.4003153, b: 0.35839793, a: 1}

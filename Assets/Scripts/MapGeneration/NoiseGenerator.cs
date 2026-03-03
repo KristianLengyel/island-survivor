@@ -23,6 +23,7 @@ public class NoiseGenerator
 				float amplitude = 1f;
 				float frequency = 1f;
 				float noiseHeight = 0f;
+
 				for (int i = 0; i < numOctaves; i++)
 				{
 					float sampleX = (x / scale * frequency) + offsetX;
@@ -32,6 +33,7 @@ public class NoiseGenerator
 					amplitude *= persistence;
 					frequency *= lacunarity;
 				}
+
 				heightmap[x, y] = Mathf.InverseLerp(-1f, 1f, noiseHeight);
 
 				float seaweedX = (float)x / mapSize * seaweedScale + seaweedOffsetX;

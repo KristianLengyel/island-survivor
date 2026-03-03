@@ -12,19 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3f110b67c1fb09419274dc9dcfe3efc, type: 3}
   m_Name: DefaultTilemapSettings
   m_EditorClassIdentifier: 
-  mapSize: 256
+  mapSize: 0
   scale: 22
-  offsetX: 2929.6677
-  offsetY: 5681.514
+  offsetX: 778.1112
+  offsetY: 6314.106
   islandThreshold: 0.87
   safeRadius: 0
   borderSize: 0
   minIslandSize: 12
   maxOceanDepth: 6
+  mapWaterPadding: 1
+  landExpansion: 1
+  minLakeSize: 6
+  minWaterNeighbors: 2
+  shallowOceanThreshold: 2
+  mediumOceanThreshold: 4
+  deepOceanThreshold: 6
+  oceanFloorBlurIterations: 3
   seaweedScale: 20
   seaweedThreshold: 0.78
+  seaweedMaxHeight: 0.4
   minIslandSizeForGrass: 60
   grassBorderOffset: 3
+  grassCoverageFraction: 0.667
+  placeCentralDock: 1
+  dockSize: 2
   numOctaves: 4
   persistence: 0.5
   lacunarity: 2

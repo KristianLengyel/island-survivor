@@ -16,21 +16,30 @@ MonoBehaviour:
   pad: 1
   useRandomSeed: 1
   seedInput: seed
+  heightMode: 1
   baseScale: 50
   octaves: 4
   persistence: 0.5
   lacunarity: 2
-  landThreshold: 0.52
   radialFalloffStrength: 0.45
   ridgeStrength: 0.15
-  borderWater: 0
+  islandCount: 260
+  islandMinSpacing: 14
+  islandMinRadius: 6
+  islandMaxRadius: 20
+  islandSharpness: 1.65
+  islandEdgeNoiseScale: 36
+  islandEdgeNoiseStrength: 0.18
+  islandPlacementAttemptsPerIsland: 26
+  landThreshold: 0.46
+  borderWater: 18
   centerNoIslandRadius: 55
-  startPlatformWidth: 2
-  startPlatformHeight: 2
+  startPlatformWidth: 9
+  startPlatformHeight: 9
   startPlatformTile: {fileID: 11400000, guid: 09d9c9c052da7bc4dace2fcce2bd5528, type: 2}
-  minIslandTiles: 20
+  minIslandTiles: 14
   minLakeTiles: 10
-  morphologyClosingIterations: 1
+  morphologyClosingIterations: 0
   beachWidthMin: 2
   beachWidthMax: 5
   grassInset: 1

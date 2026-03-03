@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc935f8c9db602428e53b13555ab2a8, type: 3}
+  m_Name: MapSettingsV3
+  m_EditorClassIdentifier: Assembly-CSharp::MapSettingsV3
+  mapSize: 512
+  pad: 2
+  chunkSize: 32
+  useRandomSeed: 1
+  seedInput: island
+  islandCount: 110
+  islandMinSpacing: 10
+  islandMinRadius: 4
+  islandMaxRadius: 16
+  islandSharpness: 1.2
+  islandPlacementAttemptsPerIsland: 30
+  warpScaleA: 14
+  warpScaleB: 28
+  warpAmplitude: 3
+  edgeNoiseScale: 30
+  edgeNoiseStrength: 0.1
+  ridgeNoiseStrength: 0.06
+  caIterations: 6
+  caBirthThreshold: 5
+  caSurvivalThreshold: 4
+  landThreshold: 0.46
+  borderWater: 20
+  centerNoIslandRadius: 20
+  minIslandTiles: 12
+  minLakeTiles: 6
+  morphologyClosingIterations: 0
+  beachWidthMin: 1
+  beachWidthMax: 4
+  grassInset: 1
+  naturalShallowCut: 0.28
+  naturalMediumCut: 0.62
+  shelfDistanceTiles: 10
+  shelfStrength: 0.7
+  seaweedScale: 20
+  seaweedThreshold: 0.62
+  seaweedMinDepth: 2
+  rockSpawnChance: 0.3
+  rockMinDistance: 3
+  rockCoastMin: 1
+  rockCoastMax: 4
+  dockWidth: 2
+  dockHeight: 2
+  dockTile: {fileID: 11400000, guid: 09d9c9c052da7bc4dace2fcce2bd5528, type: 2}
+  waterTile: {fileID: 11400000, guid: f3f8497b1614f43d6915ff827b0bf27a, type: 2}
+  oceanFloorShallowTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  oceanFloorMediumTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  oceanFloorDeepTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  seaweedTile: {fileID: 11400000, guid: e23441c2ba80c6f408c7cc7b622b732b, type: 2}
+  biomeDefinitions:
+  - {fileID: 11400000, guid: 4242a6d1ae54fe349b08097a8f782764, type: 2}
+  waterOverlapLandInland: 0

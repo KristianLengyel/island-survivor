@@ -1059,9 +1059,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0
-    width: 1
-    height: 1
+    y: 0.041666668
+    width: 0.25
+    height: 0.25
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
@@ -5428,7 +5428,7 @@ Tilemap:
     m_Data: {r: 3.9819e-41, g: 3.9819e-41, b: 3.9819e-41, a: 3.9819e-41}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.89411765, g: 0.69803923, b: 0.5294118, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Origin: {x: 0, y: 0, z: 0}
   m_Size: {x: 62, y: 14, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -12926,6 +12926,7 @@ GameObject:
   - component: {fileID: 1090300834}
   - component: {fileID: 1090300835}
   - component: {fileID: 1090300836}
+  - component: {fileID: 1090300837}
   m_Layer: 0
   m_Name: MapGenerator
   m_TagString: Untagged
@@ -12955,7 +12956,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1090300832}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 06fd610592c783040a65bca6e92d44c5, type: 3}
   m_Name: 
@@ -12999,6 +13000,29 @@ MonoBehaviour:
   settings: {fileID: 11400000, guid: f7b2f45db636e764c810f7ee6f96e5be, type: 2}
   palmTreePrefab: {fileID: 317052735598574385, guid: 6be713a4963e37f4488324a01f18ad2a, type: 3}
   palmTreeParent: {fileID: 0}
+--- !u!114 &1090300837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090300832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21d4030abf92b094d87927d43554d9d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapGeneratorV3
+  waterTilemap: {fileID: 120573954}
+  landTilemap: {fileID: 739955705}
+  grassTilemap: {fileID: 853715665}
+  oceanOverlayTilemap: {fileID: 1655376837}
+  oceanFloorShallowTilemap: {fileID: 98216263}
+  oceanFloorMediumTilemap: {fileID: 79761134}
+  oceanFloorDeepTilemap: {fileID: 805110482}
+  dockTilemap: {fileID: 943186139}
+  settings: {fileID: 11400000, guid: e5e2032fa05ee8c44b3e41d0d8dac51c, type: 2}
+  palmParent: {fileID: 0}
+  rockParent: {fileID: 0}
 --- !u!224 &1103978032 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5962571660718154296, guid: 36a8cec0099bed74a99a6f475e92a541, type: 3}

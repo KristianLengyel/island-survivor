@@ -28,10 +28,15 @@ public class MapGeneratorController : MonoBehaviour
 	[Min(0)] public int palmTreeMinSpacing = 2;
 	public Transform palmTreeParent;
 
+	// --- Internal state ---
 	private NoiseGenerator noiseGenerator;
 	private TilemapBuilder tilemapBuilder;
 	private float[,] heightmap;
 	private bool[,] originallySand;
+
+	// Cached tile state — shared across all passes to avoid GetTile() calls
+	private bool[,] isLand;
+	private bool[,] isWater;
 
 	private readonly List<GameObject> spawnedPalmTrees = new List<GameObject>();
 
@@ -57,6 +62,7 @@ public class MapGeneratorController : MonoBehaviour
 		InitializeSeed();
 		MapManager.Instance.InitializeWorld(settings.mapSize);
 
+		// 1. Generate noise
 		var noiseMaps = noiseGenerator.GenerateHeightmap(
 			settings.mapSize, settings.scale, settings.offsetX, settings.offsetY,
 			settings.numOctaves, settings.persistence, settings.lacunarity,
@@ -64,23 +70,58 @@ public class MapGeneratorController : MonoBehaviour
 		);
 		heightmap = noiseMaps.heightmap;
 
+		// 2. Build base tilemap — returns updated heightmap and caches land/water arrays
 		heightmap = tilemapBuilder.BuildTilemap(
-			waterTilemap, landTilemap, buildingTilemap, oceanOverlayTilemap,
-			betweenOceanFloorAndWaterTilemap, heightmap, settings
+			waterTilemap, landTilemap, buildingTilemap,
+			oceanOverlayTilemap, betweenOceanFloorAndWaterTilemap,
+			heightmap, settings
 		);
 
 		originallySand = tilemapBuilder.GetOriginallySand();
 
+		// Grab cached arrays — all subsequent passes use these instead of GetTile()
+		isLand = tilemapBuilder.GetIsLand();
+		isWater = tilemapBuilder.GetIsWater();
+
+		// 3. Save debug heightmap
 		HeightmapIO.SaveFloatArray("Heightmaps", "water_heightmap.txt", heightmap);
 		HeightmapIO.SaveHeightmapTexture("Heightmaps", "heightmap", heightmap);
 
-		RemoveSmallIslands();
-		MapCleanup.PerformWaterCleanup(landTilemap, waterTilemap, originallySand, settings.sandTile, settings.waterTile, settings.mapSize);
-		MapCleanup.FillInlandWater(landTilemap, waterTilemap, settings.sandTile, settings.waterTile, settings.mapSize);
-		MapCleanup.RemoveSmallLakes(landTilemap, waterTilemap, settings.sandTile, settings.waterTile, settings.mapSize, 6);
+		// 4. Cleanup passes — all update isLand/isWater arrays as they go
+		MapCleanup.RemoveSmallIslands(
+			landTilemap, waterTilemap, settings.sandTile, settings.waterTile,
+			isLand, isWater, settings.mapSize, settings.minIslandSize);
+
+		MapCleanup.PerformWaterCleanup(
+			landTilemap, waterTilemap, originallySand, isLand, isWater,
+			settings.sandTile, settings.waterTile, settings.mapSize);
+
+		MapCleanup.FillInlandWater(
+			landTilemap, waterTilemap, settings.sandTile, settings.waterTile,
+			isLand, isWater, settings.mapSize);
+
+		MapCleanup.RemoveSmallLakes(
+			landTilemap, waterTilemap, settings.sandTile, settings.waterTile,
+			isLand, isWater, settings.mapSize, settings.minLakeSize);
+
+
+		// Final pass — remove water tiles with too few water neighbors (no valid sprite)
+		MapCleanup.RemoveIsolatedWaterTiles(
+			landTilemap, waterTilemap, settings.sandTile,
+			isLand, isWater, settings.mapSize, settings.minWaterNeighbors);
+
+		// Expand sand border AFTER all cleanup passes so cleanup cannot eat it back.
+		// Covers the shallow ocean floor halo visible around the island edge.
+		if (settings.landExpansion > 0)
+			tilemapBuilder.ExpandLandBorder(settings);
+
+		// 5. Decor & structure passes
 		PlaceSeaweedPatches(noiseMaps.seaweedMap);
-		PlaceCentralIsland();
-		BuildMultiLayerOceanFloor(heightmap);
+
+		if (settings.placeCentralDock)
+			PlaceCentralIsland();
+
+		BuildMultiLayerOceanFloor();
 		PlaceGrassOverlay();
 		PlacePalmTreesOnGrass();
 		AssignTileColorsToMapManager();
@@ -88,6 +129,10 @@ public class MapGeneratorController : MonoBehaviour
 		if (cameraMovement != null)
 			cameraMovement.UpdateTilemapBounds();
 	}
+
+	// -------------------------------------------------------------------------
+	// Seed
+	// -------------------------------------------------------------------------
 
 	private void InitializeSeed()
 	{
@@ -106,6 +151,11 @@ public class MapGeneratorController : MonoBehaviour
 		settings.offsetY = Random.Range(0f, 10000f);
 	}
 
+	// -------------------------------------------------------------------------
+	// Grass overlay
+	// Uses HashSet<Vector3Int> for O(1) island membership checks
+	// -------------------------------------------------------------------------
+
 	private void PlaceGrassOverlay()
 	{
 		if (grassTilemap == null || settings.grassTile == null) return;
@@ -118,25 +168,25 @@ public class MapGeneratorController : MonoBehaviour
 		{
 			for (int y = 0; y < mapSize; y++)
 			{
-				if (visited[x, y]) continue;
+				if (visited[x, y] || !isLand[x, y]) continue;
 
 				Vector3Int tilePos = startPosition + new Vector3Int(x, y, 0);
-				TileBase currentTile = landTilemap.GetTile(tilePos);
-				if (currentTile == settings.sandTile)
-				{
-					List<Vector3Int> islandTiles = new List<Vector3Int>();
-					int islandSize = FloodFillIsland(tilePos, visited, islandTiles, mapSize);
+				List<Vector3Int> islandTiles = new List<Vector3Int>();
+				int islandSize = FloodFillIsland(tilePos, visited, islandTiles, mapSize);
 
-					if (islandSize >= settings.minIslandSizeForGrass)
-					{
-						PlaceGrassOnIsland(islandTiles);
-					}
+				if (islandSize >= settings.minIslandSizeForGrass)
+				{
+					// Build HashSet once per island — O(1) lookups inside PlaceGrassOnIsland
+					HashSet<Vector3Int> islandSet = new HashSet<Vector3Int>(islandTiles);
+					PlaceGrassOnIsland(islandTiles, islandSet);
 				}
 			}
 		}
 	}
 
-	private int FloodFillIsland(Vector3Int startTile, bool[,] visited, List<Vector3Int> islandTiles, int mapSize)
+	// Uses cached isLand array
+	private int FloodFillIsland(
+		Vector3Int startTile, bool[,] visited, List<Vector3Int> islandTiles, int mapSize)
 	{
 		int count = 0;
 		Vector3Int offset = new Vector3Int(-mapSize / 2, -mapSize / 2, 0);
@@ -153,8 +203,7 @@ public class MapGeneratorController : MonoBehaviour
 
 			if (x < 0 || x >= mapSize || y < 0 || y >= mapSize || visited[x, y]) continue;
 
-			TileBase tile = landTilemap.GetTile(current);
-			if (tile == settings.sandTile)
+			if (isLand[x, y]) // cached array instead of GetTile
 			{
 				visited[x, y] = true;
 				islandTiles.Add(current);
@@ -166,20 +215,19 @@ public class MapGeneratorController : MonoBehaviour
 					int nx = neighbor.x - offset.x;
 					int ny = neighbor.y - offset.y;
 					if (nx >= 0 && nx < mapSize && ny >= 0 && ny < mapSize && !visited[nx, ny])
-					{
 						toExplore.Enqueue(neighbor);
-					}
 				}
 			}
 		}
+
 		return count;
 	}
 
-	private void PlaceGrassOnIsland(List<Vector3Int> islandTiles)
+	// islandSet is a HashSet — Contains() is O(1) instead of O(n)
+	private void PlaceGrassOnIsland(List<Vector3Int> islandTiles, HashSet<Vector3Int> islandSet)
 	{
 		if (grassTilemap == null || settings.grassTile == null) return;
 
-		int borderOffset = settings.grassBorderOffset;
 		int mapSize = settings.mapSize;
 		Vector3Int offset = new Vector3Int(-mapSize / 2, -mapSize / 2, 0);
 
@@ -188,10 +236,10 @@ public class MapGeneratorController : MonoBehaviour
 		{
 			int x = tilePos.x - offset.x;
 			int y = tilePos.y - offset.y;
-			minX = Mathf.Min(minX, x);
-			maxX = Mathf.Max(maxX, x);
-			minY = Mathf.Min(minY, y);
-			maxY = Mathf.Max(maxY, y);
+			if (x < minX) minX = x;
+			if (x > maxX) maxX = x;
+			if (y < minY) minY = y;
+			if (y > maxY) maxY = y;
 		}
 
 		if (maxX - minX < 2 || maxY - minY < 2) return;
@@ -199,22 +247,30 @@ public class MapGeneratorController : MonoBehaviour
 		int centerX = (minX + maxX) / 2;
 		int centerY = (minY + maxY) / 2;
 
-		int grassWidth = Mathf.Max(1, (maxX - minX) * 2 / 3);
-		int grassHeight = Mathf.Max(1, (maxY - minY) * 2 / 3);
+		// grassCoverageFraction is now configurable in settings
+		float frac = settings.grassCoverageFraction;
+		int grassWidth = Mathf.Max(1, Mathf.RoundToInt((maxX - minX) * frac));
+		int grassHeight = Mathf.Max(1, Mathf.RoundToInt((maxY - minY) * frac));
 
 		List<Vector3Int> grassPositions = new List<Vector3Int>();
+
 		for (int x = centerX - grassWidth / 2; x <= centerX + grassWidth / 2; x++)
 		{
 			for (int y = centerY - grassHeight / 2; y <= centerY + grassHeight / 2; y++)
 			{
 				Vector3Int tilePos = offset + new Vector3Int(x, y, 0);
-				if (!islandTiles.Contains(tilePos) || waterTilemap.GetTile(tilePos) == settings.waterTile)
-					continue;
 
-				if (IsWithinOffsetFromBorder(tilePos, islandTiles, borderOffset))
-				{
+				// O(1) HashSet lookup instead of O(n) List.Contains
+				if (!islandSet.Contains(tilePos)) continue;
+
+				// Use cached isWater instead of GetTile
+				int gx = tilePos.x - offset.x;
+				int gy = tilePos.y - offset.y;
+				if (gx < 0 || gx >= settings.mapSize || gy < 0 || gy >= settings.mapSize) continue;
+				if (isWater[gx, gy]) continue;
+
+				if (IsWithinOffsetFromBorder(tilePos, islandSet, settings.grassBorderOffset))
 					grassPositions.Add(tilePos);
-				}
 			}
 		}
 
@@ -223,34 +279,45 @@ public class MapGeneratorController : MonoBehaviour
 		grassTilemap.SetTiles(grassPositions.ToArray(), grassTiles);
 	}
 
-	private bool IsWithinOffsetFromBorder(Vector3Int tilePos, List<Vector3Int> islandTiles, int borderOffset)
+	// O(1) per check thanks to HashSet
+	private bool IsWithinOffsetFromBorder(
+		Vector3Int tilePos, HashSet<Vector3Int> islandSet, int borderOffset)
 	{
 		Vector3Int[] directions = { Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right };
 		foreach (var dir in directions)
-		{
 			for (int i = 1; i <= borderOffset; i++)
-			{
-				Vector3Int checkPos = tilePos + dir * i;
-				if (!islandTiles.Contains(checkPos))
+				if (!islandSet.Contains(tilePos + dir * i))
 					return false;
-			}
-		}
 		return true;
 	}
+
+	// -------------------------------------------------------------------------
+	// Palm Trees
+	// Caches grass tile positions into a bool array first — no GetTile in loops
+	// -------------------------------------------------------------------------
 
 	private void PlacePalmTreesOnGrass()
 	{
 		if (palmTreePrefab == null) return;
 		if (grassTilemap == null || settings == null || settings.grassTile == null) return;
-		if (palmTreeFootprint <= 0) return;
-		if (palmTreeFootprint % 2 == 0) return;
+		if (palmTreeFootprint <= 0 || palmTreeFootprint % 2 == 0) return;
 
 		int mapSize = settings.mapSize;
 		int footprint = palmTreeFootprint;
 		int spacing = Mathf.Max(0, palmTreeMinSpacing);
 		int centerOffset = footprint / 2;
-
 		Vector3Int start = new Vector3Int(-mapSize / 2, -mapSize / 2, 0);
+
+		// Cache grass positions into a bool array — one pass, then O(1) lookups
+		bool[,] isGrass = new bool[mapSize, mapSize];
+		for (int x = 0; x < mapSize; x++)
+		{
+			for (int y = 0; y < mapSize; y++)
+			{
+				Vector3Int cell = start + new Vector3Int(x, y, 0);
+				isGrass[x, y] = grassTilemap.GetTile(cell) == settings.grassTile;
+			}
+		}
 
 		bool[,] blocked = new bool[mapSize, mapSize];
 
@@ -261,28 +328,25 @@ public class MapGeneratorController : MonoBehaviour
 				if (Random.value > palmTreeChance) continue;
 
 				bool canPlace = true;
-
 				for (int dx = 0; dx < footprint && canPlace; dx++)
 				{
 					for (int dy = 0; dy < footprint; dy++)
 					{
-						int gx = x + dx;
-						int gy = y + dy;
-
-						if (blocked[gx, gy]) { canPlace = false; break; }
-
-						Vector3Int cell = start + new Vector3Int(gx, gy, 0);
-						if (grassTilemap.GetTile(cell) != settings.grassTile) { canPlace = false; break; }
-						if (landTilemap.GetTile(cell) != settings.sandTile) { canPlace = false; break; }
+						int gx = x + dx, gy = y + dy;
+						// Use cached bool arrays — no GetTile calls here
+						if (blocked[gx, gy] || !isGrass[gx, gy] || !isLand[gx, gy])
+						{
+							canPlace = false;
+							break;
+						}
 					}
 				}
 
 				if (!canPlace) continue;
 
 				Vector3Int centerCell = start + new Vector3Int(x + centerOffset, y + centerOffset, 0);
-				Vector3 worldPos = grassTilemap.GetCellCenterWorld(centerCell);
-
-				worldPos += new Vector3(0f, grassTilemap.cellSize.y, 0f);
+				Vector3 worldPos = grassTilemap.GetCellCenterWorld(centerCell)
+								 + new Vector3(0f, grassTilemap.cellSize.y, 0f);
 
 				GameObject parent = palmTreeParent != null ? palmTreeParent.gameObject : gameObject;
 				GameObject palm = Instantiate(palmTreePrefab, worldPos, Quaternion.identity, parent.transform);
@@ -300,25 +364,28 @@ public class MapGeneratorController : MonoBehaviour
 		}
 	}
 
-	private void BuildMultiLayerOceanFloor(float[,] finalHeightmap)
+	// -------------------------------------------------------------------------
+	// Ocean floor (multi-layer BFS + blur)
+	// Uses cached isLand/isWater arrays — no GetTile calls
+	// All thresholds and blur iterations come from settings
+	// -------------------------------------------------------------------------
+
+	private void BuildMultiLayerOceanFloor()
 	{
 		int mapSize = settings.mapSize;
 		Vector3Int startPos = new Vector3Int(-mapSize / 2, -mapSize / 2, 0);
+
 		float[,] distanceFromLand = new float[mapSize, mapSize];
 		bool[,] visited = new bool[mapSize, mapSize];
 
-		List<Vector3Int> landPositions = new List<Vector3Int>();
-		List<Vector3Int> shallowPositions = new List<Vector3Int>();
-		List<Vector3Int> mediumPositions = new List<Vector3Int>();
-		List<Vector3Int> deepPositions = new List<Vector3Int>();
-
 		Queue<Vector3Int> queue = new Queue<Vector3Int>();
+
+		// Seed BFS from land — use cached isLand array
 		for (int x = 0; x < mapSize; x++)
 		{
 			for (int y = 0; y < mapSize; y++)
 			{
-				Vector3Int tilePos = startPos + new Vector3Int(x, y, 0);
-				if (landTilemap.GetTile(tilePos) != null)
+				if (isLand[x, y])
 				{
 					distanceFromLand[x, y] = 0f;
 					visited[x, y] = true;
@@ -331,44 +398,42 @@ public class MapGeneratorController : MonoBehaviour
 			}
 		}
 
-		Vector3Int[] directions = { Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right };
+		int[] dx4 = { 0, 0, 1, -1 };
+		int[] dy4 = { 1, -1, 0, 0 };
+
 		while (queue.Count > 0)
 		{
 			Vector3Int current = queue.Dequeue();
 			int cx = current.x, cy = current.y;
 			float currentDist = distanceFromLand[cx, cy];
-			foreach (var dir in directions)
+
+			for (int d = 0; d < 4; d++)
 			{
-				int nx = cx + dir.x, ny = cy + dir.y;
-				if (nx >= 0 && nx < mapSize && ny >= 0 && ny < mapSize && !visited[nx, ny])
-				{
-					visited[nx, ny] = true;
-					distanceFromLand[nx, ny] = currentDist + 1f;
-					queue.Enqueue(new Vector3Int(nx, ny, 0));
-				}
+				int nx = cx + dx4[d], ny = cy + dy4[d];
+				if (nx < 0 || nx >= mapSize || ny < 0 || ny >= mapSize) continue;
+				if (visited[nx, ny]) continue;
+				visited[nx, ny] = true;
+				distanceFromLand[nx, ny] = currentDist + 1f;
+				queue.Enqueue(new Vector3Int(nx, ny, 0));
 			}
 		}
 
-		float[,] smoothDistance = new float[mapSize, mapSize];
-		for (int x = 0; x < mapSize; x++)
-			for (int y = 0; y < mapSize; y++)
-				smoothDistance[x, y] = distanceFromLand[x, y];
-
-		int blurIterations = 3;
-		for (int iter = 0; iter < blurIterations; iter++)
+		// Blur — iterations and kernel size from settings
+		float[,] smoothDistance = distanceFromLand;
+		for (int iter = 0; iter < settings.oceanFloorBlurIterations; iter++)
 		{
 			float[,] temp = new float[mapSize, mapSize];
 			for (int x = 0; x < mapSize; x++)
 			{
 				for (int y = 0; y < mapSize; y++)
 				{
-					float sum = 0;
+					float sum = 0f;
 					int count = 0;
-					for (int dx = -1; dx <= 1; dx++)
+					for (int kx = -1; kx <= 1; kx++)
 					{
-						for (int dy = -1; dy <= 1; dy++)
+						for (int ky = -1; ky <= 1; ky++)
 						{
-							int nx = x + dx, ny = y + dy;
+							int nx = x + kx, ny = y + ky;
 							if (nx >= 0 && nx < mapSize && ny >= 0 && ny < mapSize)
 							{
 								sum += smoothDistance[nx, ny];
@@ -382,7 +447,15 @@ public class MapGeneratorController : MonoBehaviour
 			smoothDistance = temp;
 		}
 
-		float islandThreshold = 2f, shallowThreshold = 4f, mediumThreshold = 6f;
+		// Thresholds from settings
+		float islandThresh = settings.shallowOceanThreshold;
+		float shallowThresh = settings.mediumOceanThreshold;
+		float mediumThresh = settings.deepOceanThreshold;
+
+		List<Vector3Int> shallowPositions = new List<Vector3Int>();
+		List<Vector3Int> mediumPositions = new List<Vector3Int>();
+		List<Vector3Int> deepPositions = new List<Vector3Int>();
+
 		for (int x = 0; x < mapSize; x++)
 		{
 			for (int y = 0; y < mapSize; y++)
@@ -390,20 +463,20 @@ public class MapGeneratorController : MonoBehaviour
 				Vector3Int tilePos = startPos + new Vector3Int(x, y, 0);
 				float d = smoothDistance[x, y];
 
-				if (d <= islandThreshold)
+				if (d <= islandThresh)
 				{
-					landPositions.Add(tilePos);
+					// Shallow goes under land tiles intentionally (visual layering).
+					// Medium and deep are skipped for land — they render above landTilemap
+					// and would cause visible water-on-land artifacts.
+					shallowPositions.Add(tilePos);
+				}
+				else if (d <= shallowThresh)
+				{
 					shallowPositions.Add(tilePos);
 					mediumPositions.Add(tilePos);
 					deepPositions.Add(tilePos);
 				}
-				else if (d <= shallowThreshold)
-				{
-					shallowPositions.Add(tilePos);
-					mediumPositions.Add(tilePos);
-					deepPositions.Add(tilePos);
-				}
-				else if (d <= mediumThreshold)
+				else if (d <= mediumThresh)
 				{
 					mediumPositions.Add(tilePos);
 					deepPositions.Add(tilePos);
@@ -415,30 +488,23 @@ public class MapGeneratorController : MonoBehaviour
 			}
 		}
 
-		TileBase[] sandTiles = new TileBase[deepPositions.Count];
-		for (int i = 0; i < sandTiles.Length; i++) sandTiles[i] = settings.sandTile;
-		oceanFloorDeepTilemap.SetTiles(deepPositions.ToArray(), sandTiles);
-
-		sandTiles = new TileBase[mediumPositions.Count];
-		for (int i = 0; i < sandTiles.Length; i++) sandTiles[i] = settings.sandTile;
-		oceanFloorMediumTilemap.SetTiles(mediumPositions.ToArray(), sandTiles);
-
-		sandTiles = new TileBase[shallowPositions.Count];
-		for (int i = 0; i < sandTiles.Length; i++) sandTiles[i] = settings.sandTile;
-		oceanFloorShallowTilemap.SetTiles(shallowPositions.ToArray(), sandTiles);
-
-		sandTiles = new TileBase[landPositions.Count];
-		for (int i = 0; i < sandTiles.Length; i++) sandTiles[i] = settings.sandTile;
-		landTilemap.SetTiles(landPositions.ToArray(), sandTiles);
+		SetTilesFromList(oceanFloorDeepTilemap, deepPositions, settings.sandTile);
+		SetTilesFromList(oceanFloorMediumTilemap, mediumPositions, settings.sandTile);
+		SetTilesFromList(oceanFloorShallowTilemap, shallowPositions, settings.sandTile);
+		// landTilemap intentionally omitted — TilemapBuilder already placed all land tiles.
 	}
 
-	private void RemoveSmallIslands()
+	private void SetTilesFromList(Tilemap tilemap, List<Vector3Int> positions, TileBase tile)
 	{
-		MapCleanup.RemoveSmallIslands(
-			landTilemap, waterTilemap, settings.sandTile, settings.waterTile,
-			settings.mapSize, settings.minIslandSize
-		);
+		if (tilemap == null || positions.Count == 0) return;
+		TileBase[] tiles = new TileBase[positions.Count];
+		for (int i = 0; i < tiles.Length; i++) tiles[i] = tile;
+		tilemap.SetTiles(positions.ToArray(), tiles);
 	}
+
+	// -------------------------------------------------------------------------
+	// Seaweed — uses cached heightmap + isWater + isLand
+	// -------------------------------------------------------------------------
 
 	private void PlaceSeaweedPatches(float[,] seaweedMap)
 	{
@@ -452,15 +518,12 @@ public class MapGeneratorController : MonoBehaviour
 		{
 			for (int y = 0; y < mapSize; y++)
 			{
-				if (heightmap[x, y] < 0.4f && seaweedMap[x, y] > settings.seaweedThreshold)
+				if (heightmap[x, y] < settings.seaweedMaxHeight
+					&& seaweedMap[x, y] > settings.seaweedThreshold
+					&& isWater[x, y]
+					&& !isLand[x, y])
 				{
-					Vector3Int tilePosition = startPos + new Vector3Int(x, y, 0);
-					TileBase wTile = waterTilemap.GetTile(tilePosition);
-					TileBase landCheck = landTilemap.GetTile(tilePosition);
-					if (wTile == settings.waterTile && landCheck == null)
-					{
-						seaweedPositions.Add(tilePosition);
-					}
+					seaweedPositions.Add(startPos + new Vector3Int(x, y, 0));
 				}
 			}
 		}
@@ -470,6 +533,10 @@ public class MapGeneratorController : MonoBehaviour
 		oceanOverlayTilemap.SetTiles(seaweedPositions.ToArray(), seaweedTiles);
 	}
 
+	// -------------------------------------------------------------------------
+	// Central dock — size and toggle from settings
+	// -------------------------------------------------------------------------
+
 	private void PlaceCentralIsland()
 	{
 		if (settings.woodenFloorTile == null) return;
@@ -478,32 +545,30 @@ public class MapGeneratorController : MonoBehaviour
 		Vector3Int startPosition = new Vector3Int(-mapSize / 2, -mapSize / 2, 0);
 		int centerX = mapSize / 2;
 		int centerY = mapSize / 2;
+		int dockSize = settings.dockSize;
+		int half = dockSize / 2;
 
-		Vector3Int[] floorPositions = new Vector3Int[4];
-		Vector3Int[] pillarPositions = new Vector3Int[4];
-		int index = 0;
-		for (int x = centerX - 1; x <= centerX; x++)
+		List<Vector3Int> floorPositions = new List<Vector3Int>();
+		List<Vector3Int> pillarPositions = new List<Vector3Int>();
+
+		for (int x = centerX - half; x < centerX - half + dockSize; x++)
 		{
-			for (int y = centerY - 1; y <= centerY; y++)
+			for (int y = centerY - half; y < centerY - half + dockSize; y++)
 			{
-				floorPositions[index] = startPosition + new Vector3Int(x, y, 0);
-				pillarPositions[index] = startPosition + new Vector3Int(x, y - 1, 0);
-				index++;
+				floorPositions.Add(startPosition + new Vector3Int(x, y, 0));
+				pillarPositions.Add(startPosition + new Vector3Int(x, y - 1, 0));
 			}
 		}
 
-		TileBase[] floorTiles = new TileBase[4];
-		TileBase[] pillarTiles = new TileBase[4];
-		for (int i = 0; i < 4; i++)
-		{
-			floorTiles[i] = settings.woodenFloorTile;
-			pillarTiles[i] = settings.woodenPillarTile ?? null;
-		}
+		SetTilesFromList(buildingTilemap, floorPositions, settings.woodenFloorTile);
 
-		buildingTilemap.SetTiles(floorPositions, floorTiles);
 		if (settings.woodenPillarTile != null)
-			betweenOceanFloorAndWaterTilemap.SetTiles(pillarPositions, pillarTiles);
+			SetTilesFromList(betweenOceanFloorAndWaterTilemap, pillarPositions, settings.woodenPillarTile);
 	}
+
+	// -------------------------------------------------------------------------
+	// MapManager color assignment — uses cached isWater array
+	// -------------------------------------------------------------------------
 
 	private void AssignTileColorsToMapManager()
 	{
@@ -518,18 +583,20 @@ public class MapGeneratorController : MonoBehaviour
 		{
 			for (int y = 0; y < mapSize; y++)
 			{
-				Vector3Int pos = new Vector3Int(x - mapSize / 2, y - mapSize / 2, 0);
-				TileBase wTile = waterTilemap.GetTile(pos);
-				Color c = (wTile != null) ? settings.waterColor : settings.sandColor;
-				MapManager.Instance.tileColors[x, y] = c;
+				MapManager.Instance.tileColors[x, y] = isWater[x, y]
+					? settings.waterColor
+					: settings.sandColor;
 			}
 		}
 	}
 
+	// -------------------------------------------------------------------------
+	// Cleanup
+	// -------------------------------------------------------------------------
+
 	private void ClearAllTilemaps()
 	{
 		ClearSpawnedPalmTrees();
-
 		waterTilemap.ClearAllTiles();
 		landTilemap.ClearAllTiles();
 		buildingTilemap.ClearAllTiles();
@@ -544,44 +611,43 @@ public class MapGeneratorController : MonoBehaviour
 	private void ClearSpawnedPalmTrees()
 	{
 		for (int i = spawnedPalmTrees.Count - 1; i >= 0; i--)
-		{
 			if (spawnedPalmTrees[i] != null)
 				Destroy(spawnedPalmTrees[i]);
-		}
 		spawnedPalmTrees.Clear();
 	}
 
+	// -------------------------------------------------------------------------
+	// Editor Gizmos
+	// -------------------------------------------------------------------------
+
 	private void OnDrawGizmos()
 	{
-		if (!Application.isPlaying) { }
-
 		if (settings == null) return;
 
 		float halfSize = settings.mapSize / 2f;
+		Vector3 pos = transform.position;
+
+		// Map bounds
 		Gizmos.color = Color.blue;
+		Vector3 bl = pos + new Vector3(-halfSize, -halfSize, 0);
+		Vector3 br = pos + new Vector3(+halfSize, -halfSize, 0);
+		Vector3 tl = pos + new Vector3(-halfSize, +halfSize, 0);
+		Vector3 tr = pos + new Vector3(+halfSize, +halfSize, 0);
+		Gizmos.DrawLine(bl, br); Gizmos.DrawLine(br, tr);
+		Gizmos.DrawLine(tr, tl); Gizmos.DrawLine(tl, bl);
 
-		Vector3 bottomLeft = transform.position + new Vector3(-halfSize, -halfSize, 0);
-		Vector3 bottomRight = transform.position + new Vector3(+halfSize, -halfSize, 0);
-		Vector3 topLeft = transform.position + new Vector3(-halfSize, +halfSize, 0);
-		Vector3 topRight = transform.position + new Vector3(+halfSize, +halfSize, 0);
-
-		Gizmos.DrawLine(bottomLeft, bottomRight);
-		Gizmos.DrawLine(bottomRight, topRight);
-		Gizmos.DrawLine(topRight, topLeft);
-		Gizmos.DrawLine(topLeft, bottomLeft);
-
+		// Safe radius
 		Gizmos.color = Color.green;
-		Gizmos.DrawWireSphere(transform.position, settings.safeRadius);
+		Gizmos.DrawWireSphere(pos, settings.safeRadius);
 
+		// Border region
 		Gizmos.color = Color.red;
-		Vector3 borderBL = transform.position + new Vector3(-halfSize + settings.borderSize, -halfSize + settings.borderSize, 0);
-		Vector3 borderBR = transform.position + new Vector3(+halfSize - settings.borderSize, -halfSize + settings.borderSize, 0);
-		Vector3 borderTL = transform.position + new Vector3(-halfSize + settings.borderSize, +halfSize - settings.borderSize, 0);
-		Vector3 borderTR = transform.position + new Vector3(+halfSize - settings.borderSize, +halfSize - settings.borderSize, 0);
-
-		Gizmos.DrawLine(borderBL, borderBR);
-		Gizmos.DrawLine(borderBR, borderTR);
-		Gizmos.DrawLine(borderTR, borderTL);
-		Gizmos.DrawLine(borderTL, borderBL);
+		float b = settings.borderSize;
+		Vector3 bbl = pos + new Vector3(-halfSize + b, -halfSize + b, 0);
+		Vector3 bbr = pos + new Vector3(+halfSize - b, -halfSize + b, 0);
+		Vector3 btl = pos + new Vector3(-halfSize + b, +halfSize - b, 0);
+		Vector3 btr = pos + new Vector3(+halfSize - b, +halfSize - b, 0);
+		Gizmos.DrawLine(bbl, bbr); Gizmos.DrawLine(bbr, btr);
+		Gizmos.DrawLine(btr, btl); Gizmos.DrawLine(btl, bbl);
 	}
 }

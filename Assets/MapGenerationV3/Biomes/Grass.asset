@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 714f46d1aabc8af42acf22c1dc698536, type: 3}
+  m_Name: Grass
+  m_EditorClassIdentifier: Assembly-CSharp::BiomeDefinitionV3
+  biomeType: 1
+  biomeName: Grass
+  landTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  grassTile: {fileID: 11400000, guid: 722b23d560ef96d44a4e6d85a5c7e0e9, type: 2}
+  landVariants: []
+  grassVariants: []
+  palmPrefab: {fileID: 317052735598574385, guid: 6be713a4963e37f4488324a01f18ad2a, type: 3}
+  palmSpawnChance: 0.65
+  palmMinDistance: 4
+  palmCoastMin: 3
+  palmCoastMax: 28
+  rockPrefab: {fileID: 0}
+  rockSpawnChance: 0
+  seaweedDensityMultiplier: 1
+  landColor: {r: 0.89411765, g: 0.69803923, b: 0.5294118, a: 1}
+  grassColor: {r: 1, g: 1, b: 1, a: 1}

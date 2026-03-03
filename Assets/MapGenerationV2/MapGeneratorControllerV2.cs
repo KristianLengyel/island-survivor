@@ -58,7 +58,7 @@ public class MapGeneratorControllerV2 : MonoBehaviour
 		MapGenRng rng = new MapGenRng(seed);
 
 		Vector2 baseOffset, seaweedOffset;
-		MapGenNoise.GenerateHeight(w.data, settings, ref rng, out baseOffset, out seaweedOffset);
+		MapGenNoise.GenerateHeight(w.data, settings, ref rng, w, out baseOffset, out seaweedOffset);
 
 		MapGenMasks.ThresholdLand(w.data, settings);
 		MapGenMasks.MorphologyClosing(w.data, settings.morphologyClosingIterations, w.morphTmp);

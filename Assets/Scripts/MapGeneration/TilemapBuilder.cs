@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -12,12 +12,13 @@ public class TilemapBuilder
 
 	private TileBase waterTile;
 	private TileBase sandTile;
-	private TileBase seaweedTile;
-	private TileBase woodenFloorTile;
-	private TileBase woodenPillarTile;
 
 	private bool[,] originallySand;
 	private float[,] heightmap;
+
+	// Cached tile state arrays  avoids repeated GetTile() calls downstream
+	private bool[,] isLand;
+	private bool[,] isWater;
 
 	public float[,] BuildTilemap(
 		Tilemap waterTilemap, Tilemap landTilemap, Tilemap buildingTilemap,
@@ -32,14 +33,12 @@ public class TilemapBuilder
 
 		this.waterTile = settings.waterTile;
 		this.sandTile = settings.sandTile;
-		this.seaweedTile = settings.seaweedTile;
-		this.woodenFloorTile = settings.woodenFloorTile;
-		this.woodenPillarTile = settings.woodenPillarTile;
-
 		this.heightmap = noiseMap;
 
 		int mapSize = settings.mapSize;
 		originallySand = new bool[mapSize, mapSize];
+		isLand = new bool[mapSize, mapSize];
+		isWater = new bool[mapSize, mapSize];
 
 		FillWaterTilemap(settings);
 		PlaceSandTiles(settings);
@@ -50,9 +49,8 @@ public class TilemapBuilder
 
 	private void FillWaterTilemap(TilemapGenerationSettings settings)
 	{
-		int pad = 1;
-
 		int mapSize = settings.mapSize;
+		int pad = settings.mapWaterPadding;
 		int waterSize = mapSize + pad * 2;
 
 		Vector3Int startPosition = new Vector3Int(-mapSize / 2 - pad, -mapSize / 2 - pad, 0);
@@ -67,7 +65,6 @@ public class TilemapBuilder
 			{
 				int innerX = x - pad;
 				int innerY = y - pad;
-
 				bool insideInner = innerX >= 0 && innerX < mapSize && innerY >= 0 && innerY < mapSize;
 				if (!insideInner) continue;
 
@@ -91,6 +88,11 @@ public class TilemapBuilder
 		BoundsInt bounds = new BoundsInt(startPosition, new Vector3Int(waterSize, waterSize, 1));
 		waterTilemap.ClearAllTiles();
 		waterTilemap.SetTilesBlock(bounds, waterTilesArray);
+
+		// Cache water state
+		for (int x = 0; x < mapSize; x++)
+			for (int y = 0; y < mapSize; y++)
+				isWater[x, y] = true; // everything starts as water
 	}
 
 	private void PlaceSandTiles(TilemapGenerationSettings settings)
@@ -107,22 +109,98 @@ public class TilemapBuilder
 					new Vector2(x, y), new Vector2(mapSize / 2f, mapSize / 2f));
 
 				float distFactor = distFromCenter / (mapSize / 2f);
-				float dynamicThreshold = Mathf.Lerp(settings.islandThreshold, settings.islandThreshold - 0.1f, distFactor);
+				float dynamicThreshold = Mathf.Lerp(
+					settings.islandThreshold, settings.islandThreshold - 0.1f, distFactor);
 
 				if (heightmap[x, y] >= dynamicThreshold)
 				{
 					Vector3Int pos = startPosition + new Vector3Int(x, y, 0);
 					sandPositions.Add(pos);
 					originallySand[x, y] = true;
+					isLand[x, y] = true;
+					isWater[x, y] = false;
 				}
 			}
 		}
 
 		Vector3Int[] positionsArray = sandPositions.ToArray();
+
 		TileBase[] tilesArray = new TileBase[positionsArray.Length];
 		for (int i = 0; i < tilesArray.Length; i++)
 			tilesArray[i] = sandTile;
 		landTilemap.SetTiles(positionsArray, tilesArray);
+
+		// Clear water tiles underneath land so no overlap exists
+		waterTilemap.SetTiles(positionsArray, new TileBase[positionsArray.Length]);
+		// Note: land expansion (ExpandLandBorder) is called by MapGeneratorController
+		// AFTER all cleanup passes, so cleanup doesn't eat back the expansion.
+	}
+
+	// Grows the sand border outward by landExpansion tiles using BFS from existing land.
+	// New sand tiles are added to landTilemap, water is cleared at those positions,
+	// and isLand/isWater arrays are updated so all subsequent passes stay consistent.
+	// Called by MapGeneratorController AFTER all cleanup passes.
+	public void ExpandLandBorder(TilemapGenerationSettings settings)
+	{
+		int mapSize = settings.mapSize;
+		int expansion = settings.landExpansion;
+		Vector3Int startPosition = new Vector3Int(-mapSize / 2, -mapSize / 2, 0);
+
+		int[] dx = { 0, 0, 1, -1 };
+		int[] dy = { 1, -1, 0, 0 };
+
+		// BFS from all existing land tiles outward into water
+		int[,] dist = new int[mapSize, mapSize];
+		for (int x = 0; x < mapSize; x++)
+			for (int y = 0; y < mapSize; y++)
+				dist[x, y] = -1;
+
+		Queue<Vector2Int> queue = new Queue<Vector2Int>();
+
+		for (int x = 0; x < mapSize; x++)
+			for (int y = 0; y < mapSize; y++)
+				if (isLand[x, y])
+				{
+					dist[x, y] = 0;
+					queue.Enqueue(new Vector2Int(x, y));
+				}
+
+		List<Vector3Int> newSandPositions = new List<Vector3Int>();
+
+		while (queue.Count > 0)
+		{
+			Vector2Int current = queue.Dequeue();
+			int currentDist = dist[current.x, current.y];
+			if (currentDist >= expansion) continue;
+
+			for (int d = 0; d < 4; d++)
+			{
+				int nx = current.x + dx[d], ny = current.y + dy[d];
+				if (nx < 0 || nx >= mapSize || ny < 0 || ny >= mapSize) continue;
+				if (dist[nx, ny] != -1) continue;
+
+				dist[nx, ny] = currentDist + 1;
+
+				if (isWater[nx, ny])
+				{
+					newSandPositions.Add(startPosition + new Vector3Int(nx, ny, 0));
+					// Update cached arrays immediately so BFS neighbours are correct
+					isLand[nx, ny] = true;
+					isWater[nx, ny] = false;
+				}
+
+				queue.Enqueue(new Vector2Int(nx, ny));
+			}
+		}
+
+		if (newSandPositions.Count == 0) return;
+
+		TileBase[] sandTilesArr = new TileBase[newSandPositions.Count];
+		TileBase[] clearTilesArr = new TileBase[newSandPositions.Count];
+		for (int i = 0; i < sandTilesArr.Length; i++) sandTilesArr[i] = sandTile;
+
+		waterTilemap.SetTiles(newSandPositions.ToArray(), clearTilesArr);
+		landTilemap.SetTiles(newSandPositions.ToArray(), sandTilesArr);
 	}
 
 	private void ComputeDistanceBasedHeightmap(TilemapGenerationSettings settings)
@@ -134,11 +212,12 @@ public class TilemapBuilder
 		bool[,] visited = new bool[mapSize, mapSize];
 		Queue<Vector3Int> queue = new Queue<Vector3Int>();
 
+		// Seed BFS from land tiles  use cached isLand array, no GetTile calls
 		for (int x = 0; x < mapSize; x++)
 		{
 			for (int y = 0; y < mapSize; y++)
 			{
-				if (landTilemap.GetTile(startPosition + new Vector3Int(x, y, 0)) == sandTile)
+				if (isLand[x, y])
 				{
 					queue.Enqueue(new Vector3Int(x, y, 0));
 					visited[x, y] = true;
@@ -154,24 +233,20 @@ public class TilemapBuilder
 			Vector3Int current = queue.Dequeue();
 			foreach (var dir in directions)
 			{
-				Vector3Int neighbor = current + dir;
-				if (neighbor.x < 0 || neighbor.x >= mapSize || neighbor.y < 0 || neighbor.y >= mapSize)
-					continue;
+				int nx = current.x + dir.x;
+				int ny = current.y + dir.y;
+				if (nx < 0 || nx >= mapSize || ny < 0 || ny >= mapSize) continue;
+				if (visited[nx, ny]) continue;
 
-				if (!visited[neighbor.x, neighbor.y])
+				// Use cached isWater array instead of GetTile
+				if (isWater[nx, ny])
 				{
-					TileBase wTile = waterTilemap.GetTile(startPosition + neighbor);
-					if (wTile == settings.waterTile)
-					{
-						float currentDistance = distanceMap[current.x, current.y];
-						float neighborDistance = currentDistance + 1f;
-						if (neighborDistance > settings.maxOceanDepth)
-							continue;
+					float neighborDistance = distanceMap[current.x, current.y] + 1f;
+					if (neighborDistance > settings.maxOceanDepth) continue;
 
-						distanceMap[neighbor.x, neighbor.y] = neighborDistance;
-						queue.Enqueue(neighbor);
-						visited[neighbor.x, neighbor.y] = true;
-					}
+					distanceMap[nx, ny] = neighborDistance;
+					queue.Enqueue(new Vector3Int(nx, ny, 0));
+					visited[nx, ny] = true;
 				}
 			}
 		}
@@ -180,7 +255,7 @@ public class TilemapBuilder
 		{
 			for (int y = 0; y < mapSize; y++)
 			{
-				if (landTilemap.GetTile(startPosition + new Vector3Int(x, y, 0)) == sandTile)
+				if (isLand[x, y])
 				{
 					heightmap[x, y] = 1f;
 				}
@@ -196,8 +271,17 @@ public class TilemapBuilder
 		}
 	}
 
-	public bool[,] GetOriginallySand()
-	{
-		return originallySand;
-	}
+	public bool[,] GetOriginallySand() => originallySand;
+
+	/// <summary>
+	/// Returns a cached bool array of land tiles (true = land/sand).
+	/// Use this instead of calling landTilemap.GetTile() in loops.
+	/// </summary>
+	public bool[,] GetIsLand() => isLand;
+
+	/// <summary>
+	/// Returns a cached bool array of water tiles (true = water).
+	/// Use this instead of calling waterTilemap.GetTile() in loops.
+	/// </summary>
+	public bool[,] GetIsWater() => isWater;
 }
