@@ -12927,6 +12927,7 @@ GameObject:
   - component: {fileID: 1090300835}
   - component: {fileID: 1090300836}
   - component: {fileID: 1090300837}
+  - component: {fileID: 1090300838}
   m_Layer: 0
   m_Name: MapGenerator
   m_TagString: Untagged
@@ -13020,9 +13021,38 @@ MonoBehaviour:
   oceanFloorMediumTilemap: {fileID: 79761134}
   oceanFloorDeepTilemap: {fileID: 805110482}
   dockTilemap: {fileID: 943186139}
-  settings: {fileID: 11400000, guid: e5e2032fa05ee8c44b3e41d0d8dac51c, type: 2}
+  tilemapGrid: {fileID: 312804794}
+  sizePresets:
+  - {fileID: 11400000, guid: 1fb0fec13608d5044be8e11791dea4cd, type: 2}
+  - {fileID: 11400000, guid: a0bddddf27bcf6b42a4d7f11e3a7f53f, type: 2}
+  - {fileID: 11400000, guid: a71a02ae5c3bfb24ba4e61ba26663217, type: 2}
+  - {fileID: 11400000, guid: 6e427d67a5111964896c023fc55370c5, type: 2}
+  selectedPreset: 1
   palmParent: {fileID: 0}
   rockParent: {fileID: 0}
+--- !u!114 &1090300838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090300832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba6f565601a627b4f840038d36ff0237, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapChunkStreamerV3
+  generator: {fileID: 1090300837}
+  playerTransform: {fileID: 1853516645}
+  waterTilemap: {fileID: 120573954}
+  landTilemap: {fileID: 739955705}
+  grassTilemap: {fileID: 853715665}
+  oceanOverlayTilemap: {fileID: 1655376837}
+  oceanFloorShallowTilemap: {fileID: 98216263}
+  oceanFloorMediumTilemap: {fileID: 79761134}
+  oceanFloorDeepTilemap: {fileID: 805110482}
+  loadRadius: 1
+  layersPerFrame: 2
 --- !u!224 &1103978032 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5962571660718154296, guid: 36a8cec0099bed74a99a6f475e92a541, type: 3}
@@ -22026,8 +22056,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39da9ae3dc9ea1544852bfbc131f7387, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  landSpeed: 3
-  waterSpeed: 0.75
+  landSpeed: 20
+  waterSpeed: 20.75
   smoothing: 0.05
   maxFillRange: 2
   fillIndicatorTilemap: {fileID: 71209571}

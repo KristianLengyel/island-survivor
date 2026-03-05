@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class MapBiomesV3
 {
-	public static void BuildBands(MapDataV3 d, MapSettingsV3 s, ref MapRngV3 rng)
+	public static void BuildBands(MapDataV3 d, MapSettingsV3 s, ref MapRngV3 rng, MapWorkspaceV3 w)
 	{
 		int size = d.size;
 		float sea = Mathf.Clamp01(s.landThreshold);
@@ -14,8 +14,8 @@ public static class MapBiomesV3
 		float medCut = Mathf.Clamp01(s.naturalMediumCut);
 		if (medCut < shCut) medCut = shCut;
 
-		float[] beachWidth = new float[size * size];
 		float noiseScale = 0.04f;
+		float[] beachWidth = w.beachWidth;
 		for (int y = 0; y < size; y++)
 			for (int x = 0; x < size; x++)
 			{
@@ -37,7 +37,6 @@ public static class MapBiomesV3
 				if (d.land[i] == 1)
 				{
 					float localBeach = beachWidth[i];
-
 					if (cd <= localBeach) d.beach[i] = 1;
 					else if (cd >= s.grassInset) d.grass[i] = 1;
 				}

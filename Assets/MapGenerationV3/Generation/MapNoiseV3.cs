@@ -7,6 +7,9 @@
 /// - Domain warp (breaks circular shapes)
 /// - Directional edge noise (natural coastlines)
 /// - Biome stored per island in workspace for later propagation
+/// 
+/// NOTE: islandCount in MapSettingsV3 assets is already authored per map size
+/// (256→28, 512→110, 1024→440, etc.) so no area-scaling is applied here.
 /// </summary>
 public static class MapNoiseV3
 {
@@ -32,7 +35,11 @@ public static class MapNoiseV3
 		MapDataV3 d, MapSettingsV3 s, ref MapRngV3 rng, MapWorkspaceV3 w, Vector2 baseOffset)
 	{
 		int size = d.size;
+
+		// Use islandCount directly from settings — the assets are already
+		// authored with the correct count for each map size (no area scaling needed).
 		int target = Mathf.Max(1, s.islandCount);
+
 		int minSpacing = Mathf.Max(1, s.islandMinSpacing);
 		int minR = Mathf.Max(1, s.islandMinRadius);
 		int maxR = Mathf.Max(minR, s.islandMaxRadius);
@@ -123,7 +130,11 @@ public static class MapNoiseV3
 		float ridgeAmp = Mathf.Clamp01(s.ridgeNoiseStrength);
 
 		int maxR = s.islandMaxRadius;
-		int searchCells = Mathf.CeilToInt(maxR / cell) + 2;
+
+		// Include warp amplitude in the search distance so that tiles
+		// displaced by domain warp can still find their nearest island center.
+		float maxSearchDist = maxR + warpAmp * 2f;
+		int searchCells = Mathf.CeilToInt(maxSearchDist / cell) + 2;
 
 		// Reset islandId map
 		int n = size * size;

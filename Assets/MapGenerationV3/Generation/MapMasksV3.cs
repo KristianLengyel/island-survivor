@@ -1,12 +1,5 @@
-﻿/// <summary>
-/// Land thresholding, morphological closing, cellular automata smoothing,
-/// small island removal, and lake filling.
-/// </summary>
-public static class MapMasksV3
+﻿public static class MapMasksV3
 {
-	// ------------------------------------------------------------------
-	// Threshold raw height into binary land/water
-	// ------------------------------------------------------------------
 	public static void ThresholdLand(MapDataV3 d, MapSettingsV3 s)
 	{
 		int size = d.size;
@@ -42,11 +35,6 @@ public static class MapMasksV3
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// Cellular Automata — smooth sandy coastlines
-	// Birth: become land if >= birthThreshold neighbours are land
-	// Survive: stay land if >= survivalThreshold neighbours are land
-	// ------------------------------------------------------------------
 	public static void CellularAutomata(MapDataV3 d, MapSettingsV3 s, byte[] tmp)
 	{
 		if (s.caIterations <= 0) return;
@@ -65,7 +53,6 @@ public static class MapMasksV3
 				{
 					int i = row + x;
 
-					// Hard border stays water
 					if (y < border || y >= size - border ||
 						x < border || x >= size - border)
 					{
@@ -82,7 +69,6 @@ public static class MapMasksV3
 				}
 			}
 
-			// Swap
 			System.Array.Copy(tmp, d.land, size * size);
 		}
 	}
@@ -106,9 +92,6 @@ public static class MapMasksV3
 		return count;
 	}
 
-	// ------------------------------------------------------------------
-	// Morphological closing (dilate then erode) — fills tiny gaps
-	// ------------------------------------------------------------------
 	public static void MorphologyClosing(MapDataV3 d, int iterations, byte[] tmp)
 	{
 		if (iterations <= 0) return;
@@ -170,9 +153,6 @@ public static class MapMasksV3
 		return true;
 	}
 
-	// ------------------------------------------------------------------
-	// Remove small islands
-	// ------------------------------------------------------------------
 	public static void RemoveSmallIslands(MapDataV3 d, int minTiles, MapWorkspaceV3 w)
 	{
 		if (minTiles <= 1) return;
@@ -188,8 +168,10 @@ public static class MapMasksV3
 			if (d.land[start] == 0 || w.labels[start] != 0) continue;
 			label++;
 			w.EnsureComponentCapacity(label);
-			w.componentCounts[label] = FloodLabel(d.land, w.labels, d.size, start, label, w.bfsQueue, true);
+			w.componentCounts[label] = FloodLabel(
+				d.land, w.labels, d.size, start, label, w.bfsQueue, true);
 		}
+
 		for (int i = 0; i < n; i++)
 		{
 			int l = w.labels[i];
@@ -197,9 +179,6 @@ public static class MapMasksV3
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// Fill small enclosed lakes
-	// ------------------------------------------------------------------
 	public static void FillSmallLakes(MapDataV3 d, int minTiles, MapWorkspaceV3 w)
 	{
 		if (minTiles <= 1) return;
@@ -216,9 +195,11 @@ public static class MapMasksV3
 			if (d.land[start] == 1 || w.labels[start] != 0) continue;
 			label++;
 			w.EnsureComponentCapacity(label);
-			w.componentCounts[label] = FloodLabel(d.land, w.labels, d.size, start, label, w.bfsQueue, false,
+			w.componentCounts[label] = FloodLabel(
+				d.land, w.labels, d.size, start, label, w.bfsQueue, false,
 				out w.componentTouchesBorder[label]);
 		}
+
 		for (int i = 0; i < n; i++)
 		{
 			int l = w.labels[i];
@@ -227,15 +208,11 @@ public static class MapMasksV3
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// Propagate islandId from land to nearby ocean tiles (for biome painting)
-	// ------------------------------------------------------------------
 	public static void PropagateIslandBiomes(MapDataV3 d, MapWorkspaceV3 w, MapSettingsV3 s)
 	{
 		int size = d.size;
 		int n = size * size;
 
-		// Copy biome from workspace island array to each land tile
 		for (int i = 0; i < n; i++)
 		{
 			if (d.land[i] == 1 && d.islandId[i] >= 0)
@@ -244,12 +221,12 @@ public static class MapMasksV3
 				d.biome[i] = 0;
 		}
 
-		// Use a dedicated queue sized 2n — bfsQueue is only n and can overflow
-		// when both land seeds AND ocean neighbours are enqueued simultaneously.
-		int[] q = new int[n * 2];
-		int qs = 0, qe = 0;
+		int[] q = w.biomeQueue;
+		bool[] visited = w.biomeVisited;
 
-		bool[] visited = new bool[n];
+		for (int i = 0; i < n; i++) visited[i] = false;
+
+		int qs = 0, qe = 0;
 
 		for (int i = 0; i < n; i++)
 		{
@@ -282,22 +259,11 @@ public static class MapMasksV3
 		q[qe++] = to;
 	}
 
-	private static void TrySpread(int from, int to, MapDataV3 d, MapWorkspaceV3 w,
-		bool[] visited, ref int qe, bool inBounds)
-	{
-		if (!inBounds || visited[to]) return;
-		visited[to] = true;
-		if (d.biome[to] == 0) d.biome[to] = d.biome[from];
-		w.bfsQueue[qe++] = to;
-	}
-
-	// ------------------------------------------------------------------
-	// Shared flood fill (land or water)
-	// ------------------------------------------------------------------
 	private static int FloodLabel(byte[] land, int[] labels, int size, int start,
 		int label, int[] q, bool forLand)
 	{
-		byte b; return FloodLabel(land, labels, size, start, label, q, forLand, out b);
+		byte b;
+		return FloodLabel(land, labels, size, start, label, q, forLand, out b);
 	}
 
 	private static int FloodLabel(byte[] land, int[] labels, int size, int start,
@@ -316,16 +282,16 @@ public static class MapMasksV3
 			int x = idx % size, y = idx / size;
 			if (x == 0 || y == 0 || x == size - 1 || y == size - 1) touchesBorder = 1;
 
-			TryEnqueue(land, labels, size, idx, x, y + 1, size, label, q, ref qe, forLand);
-			TryEnqueue(land, labels, size, idx, x, y - 1, -1, label, q, ref qe, forLand);
-			TryEnqueue(land, labels, size, idx, x + 1, y, size, label, q, ref qe, forLand);
-			TryEnqueue(land, labels, size, idx, x - 1, y, -1, label, q, ref qe, forLand);
+			TryEnqueue(land, labels, size, x, y + 1, label, q, ref qe, forLand);
+			TryEnqueue(land, labels, size, x, y - 1, label, q, ref qe, forLand);
+			TryEnqueue(land, labels, size, x + 1, y, label, q, ref qe, forLand);
+			TryEnqueue(land, labels, size, x - 1, y, label, q, ref qe, forLand);
 		}
 		return count;
 	}
 
 	private static void TryEnqueue(byte[] land, int[] labels, int size,
-		int from, int nx, int ny, int limit, int label, int[] q, ref int qe, bool forLand)
+		int nx, int ny, int label, int[] q, ref int qe, bool forLand)
 	{
 		if ((uint)nx >= (uint)size || (uint)ny >= (uint)size) return;
 		int nIdx = ny * size + nx;

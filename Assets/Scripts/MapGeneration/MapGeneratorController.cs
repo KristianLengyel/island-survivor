@@ -126,8 +126,8 @@ public class MapGeneratorController : MonoBehaviour
 		PlacePalmTreesOnGrass();
 		AssignTileColorsToMapManager();
 
-		if (cameraMovement != null)
-			cameraMovement.UpdateTilemapBounds();
+		//if (cameraMovement != null)
+		//	cameraMovement.UpdateTilemapBounds();
 	}
 
 	// -------------------------------------------------------------------------

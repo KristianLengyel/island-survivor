@@ -1,9 +1,4 @@
-/// <summary>
-/// BFS signed coast distance.
-/// Positive = tiles inland, Negative = tiles into ocean, 0 = coast edge.
-/// Identical algorithm to V2 — battle-tested.
-/// </summary>
-public static class MapDistanceFieldV3
+ï»¿public static class MapDistanceFieldV3
 {
 	public static void Compute(MapDataV3 d, int[] q)
 	{
@@ -28,7 +23,11 @@ public static class MapDistanceFieldV3
 					(y > 0 && d.land[i - size] != v) ||
 					(y < size - 1 && d.land[i + size] != v);
 
-				if (isCoast) { dist[i] = 0; q[qe++] = i; }
+				if (isCoast)
+				{
+					dist[i] = 0;
+					q[qe++] = i;
+				}
 			}
 		}
 
@@ -37,22 +36,21 @@ public static class MapDistanceFieldV3
 			int idx = q[qs++];
 			int x = idx % size;
 			int y = idx / size;
-			int baseD = dist[idx];
+			int nd = dist[idx] + 1;
 
-			if (y + 1 < size) Relax(idx + size, baseD, dist, q, ref qe);
-			if (y - 1 >= 0) Relax(idx - size, baseD, dist, q, ref qe);
-			if (x + 1 < size) Relax(idx + 1, baseD, dist, q, ref qe);
-			if (x - 1 >= 0) Relax(idx - 1, baseD, dist, q, ref qe);
+			if (y + 1 < size) TryEnqueue(idx + size, nd, dist, q, ref qe);
+			if (y - 1 >= 0) TryEnqueue(idx - size, nd, dist, q, ref qe);
+			if (x + 1 < size) TryEnqueue(idx + 1, nd, dist, q, ref qe);
+			if (x - 1 >= 0) TryEnqueue(idx - 1, nd, dist, q, ref qe);
 		}
 
 		for (int i = 0; i < n; i++)
 			if (d.land[i] == 0) dist[i] = -dist[i];
 	}
 
-	private static void Relax(int nIdx, int baseD, int[] dist, int[] q, ref int qe)
+	private static void TryEnqueue(int nIdx, int nd, int[] dist, int[] q, ref int qe)
 	{
-		int nd = baseD + 1;
-		if (nd >= dist[nIdx]) return;
+		if (dist[nIdx] != int.MaxValue) return;
 		dist[nIdx] = nd;
 		q[qe++] = nIdx;
 	}

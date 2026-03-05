@@ -2,33 +2,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-/// <summary>
-/// Reusable scratch buffers. Call Ensure() before each generation to
-/// avoid re-allocating when map size hasn't changed.
-/// </summary>
 public sealed class MapWorkspaceV3
 {
-	// ---- sizing ----
 	public int size;
 	public int pad;
 	public int waterSize;
 	public int n;
 
-	// ---- core data ----
 	public MapDataV3 data;
 
-	// ---- morphology ----
 	public byte[] morphTmp;
-
-	// ---- BFS ----
 	public int[] bfsQueue;
 
-	// ---- flood fill ----
 	public int[] labels;
 	public int[] componentCounts;
 	public byte[] componentTouchesBorder;
 
-	// ---- island placement ----
 	public Vector2[] islandCenters;
 	public float[] islandRadii;
 	public BiomeType[] islandBiomes;
@@ -37,7 +26,11 @@ public sealed class MapWorkspaceV3
 	public int islandGridW, islandGridH;
 	public float islandCellSize;
 
-	// ---- tilemap paint buffers ----
+	public MapChunkV3[] chunks;
+	public int chunkCols;
+	public int chunkRows;
+	public int chunkSize;
+
 	public TileBase[] waterTiles;
 	public TileBase[] deepTiles;
 	public TileBase[] medTiles;
@@ -46,11 +39,23 @@ public sealed class MapWorkspaceV3
 	public TileBase[] grassTiles;
 	public TileBase[] overlayTiles;
 
-	// ---- decorator lists (reused per regen) ----
+	public TileBase[] paintBuffer;
+	public float[] beachWidth;
+	public int[] biomeQueue;
+	public bool[] biomeVisited;
+	public int[] chunkLayerProgress;
+	public int[] biomeScratch;
+
 	public List<int> palmCandidates = new List<int>(4096);
 	public List<int> rockCandidates = new List<int>(2048);
 	public List<Vector2Int> palmAccepted = new List<Vector2Int>(512);
 	public List<Vector2Int> rockAccepted = new List<Vector2Int>(512);
+
+	public int decorGridW;
+	public int decorGridH;
+	public float decorCellSize;
+	public int[] palmGrid;
+	public int[] rockGrid;
 
 	public void Ensure(int size, int pad)
 	{
@@ -63,11 +68,11 @@ public sealed class MapWorkspaceV3
 
 		data = new MapDataV3(size, pad);
 		morphTmp = new byte[n];
-		bfsQueue = new int[n];
+		bfsQueue = new int[n * 2];
 		labels = new int[n];
 
-		componentCounts = new int[256];
-		componentTouchesBorder = new byte[256];
+		componentCounts = new int[1024];
+		componentTouchesBorder = new byte[1024];
 
 		waterTiles = new TileBase[waterSize * waterSize];
 		deepTiles = new TileBase[n];
@@ -77,6 +82,12 @@ public sealed class MapWorkspaceV3
 		grassTiles = new TileBase[n];
 		overlayTiles = new TileBase[n];
 
+		paintBuffer = new TileBase[n];
+		beachWidth = new float[n];
+		biomeQueue = new int[n * 2];
+		biomeVisited = new bool[n];
+		biomeScratch = new int[System.Enum.GetValues(typeof(BiomeType)).Length];
+
 		islandCenters = new Vector2[256];
 		islandRadii = new float[256];
 		islandBiomes = new BiomeType[256];
@@ -84,6 +95,16 @@ public sealed class MapWorkspaceV3
 		islandCount = 0;
 		islandGridW = islandGridH = 0;
 		islandCellSize = 1f;
+
+		chunks = null;
+		chunkCols = chunkRows = chunkSize = 0;
+		chunkLayerProgress = null;
+	}
+
+	public void EnsureChunkLayerProgress(int chunkCount)
+	{
+		if (chunkLayerProgress != null && chunkLayerProgress.Length >= chunkCount) return;
+		chunkLayerProgress = new int[chunkCount];
 	}
 
 	public void EnsureComponentCapacity(int labelMax)
@@ -117,5 +138,33 @@ public sealed class MapWorkspaceV3
 		}
 		islandGridW = gw;
 		islandGridH = gh;
+	}
+
+	public void EnsureDecorGrids(int gw, int gh)
+	{
+		int need = Mathf.Max(1, gw * gh);
+		if (palmGrid == null || palmGrid.Length < need)
+		{
+			palmGrid = new int[need];
+			rockGrid = new int[need];
+		}
+		decorGridW = gw;
+		decorGridH = gh;
+	}
+
+	public MapChunkV3 GetChunkForTile(int x, int y)
+	{
+		if (chunks == null || chunkSize <= 0) return default;
+		int cx = Mathf.Clamp(x / chunkSize, 0, chunkCols - 1);
+		int cy = Mathf.Clamp(y / chunkSize, 0, chunkRows - 1);
+		return chunks[cy * chunkCols + cx];
+	}
+
+	public int GetChunkIndex(int tileX, int tileY)
+	{
+		if (chunks == null || chunkSize <= 0) return -1;
+		int cx = Mathf.Clamp(tileX / chunkSize, 0, chunkCols - 1);
+		int cy = Mathf.Clamp(tileY / chunkSize, 0, chunkRows - 1);
+		return cy * chunkCols + cx;
 	}
 }
