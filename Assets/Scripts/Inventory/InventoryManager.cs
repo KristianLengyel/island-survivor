@@ -28,6 +28,7 @@ public class InventoryManager : MonoBehaviour
 
 	private int selectedSlot = 0;
 	private CraftingMenu craftingMenu;
+	private InventoryContainer container;
 
 	public bool InventoryLocked { get; set; }
 
@@ -36,6 +37,8 @@ public class InventoryManager : MonoBehaviour
 
 	private void Awake()
 	{
+		container = new InventoryContainer(inventorySlots, maxStackedItems, inventoryItemPrefab, waterContainerItemPrefab);
+
 		if (craftingUI != null)
 		{
 			craftingMenu = craftingUI.GetComponentInChildren<CraftingMenu>(true);
@@ -63,29 +66,30 @@ public class InventoryManager : MonoBehaviour
 		RebuildCountsIfDirty();
 	}
 
-	public void MarkCountsDirty()
+	/// <summary>Creates an InventoryContainer backed by the given slots, sharing this manager's prefabs and stack size.</summary>
+	public InventoryContainer CreateContainer(InventorySlot[] slots)
 	{
-		countsDirty = true;
+		return new InventoryContainer(slots, maxStackedItems, inventoryItemPrefab, waterContainerItemPrefab);
 	}
+
+	public void MarkCountsDirty() => countsDirty = true;
 
 	public void ShiftMoveBetweenToolbarAndInventory(InventoryItem sourceItem)
 	{
 		if (sourceItem == null || sourceItem.item == null) return;
 		if (!IsInventoryOpen()) return;
 
-		int fromIndex = GetSlotIndexOfItem(sourceItem);
+		int fromIndex = container.GetSlotIndexOfItem(sourceItem);
 		if (fromIndex < 0) return;
 
 		bool fromToolbar = fromIndex < ToolbarSlotCount;
-
 		int targetStart = fromToolbar ? ToolbarSlotCount : 0;
 		int targetEnd = fromToolbar ? inventorySlots.Length - 1 : ToolbarSlotCount - 1;
 
 		if (sourceItem is WaterContainerInventoryItem)
 		{
-			var empty = GetEmptySlotInRange(targetStart, targetEnd);
+			var empty = container.GetEmptySlotInRange(targetStart, targetEnd);
 			if (empty == null) return;
-
 			sourceItem.transform.SetParent(empty.transform, false);
 			sourceItem.transform.localPosition = Vector3.zero;
 			MarkCountsDirty();
@@ -96,16 +100,15 @@ public class InventoryManager : MonoBehaviour
 
 		if (!item.stackable)
 		{
-			var empty = GetEmptySlotInRange(targetStart, targetEnd);
+			var empty = container.GetEmptySlotInRange(targetStart, targetEnd);
 			if (empty == null) return;
-
 			sourceItem.transform.SetParent(empty.transform, false);
 			sourceItem.transform.localPosition = Vector3.zero;
 			MarkCountsDirty();
 			return;
 		}
 
-		int moved = MoveStackableCountIntoRange(item, sourceItem.count, targetStart, targetEnd);
+		int moved = container.MoveStackableCountIntoRange(item, sourceItem.count, targetStart, targetEnd);
 		if (moved <= 0) return;
 
 		sourceItem.count -= moved;
@@ -120,82 +123,10 @@ public class InventoryManager : MonoBehaviour
 		MarkCountsDirty();
 	}
 
-	private int GetSlotIndexOfItem(InventoryItem item)
-	{
-		if (inventorySlots == null) return -1;
-
-		for (int i = 0; i < inventorySlots.Length; i++)
-		{
-			if (inventorySlots[i] == null) continue;
-
-			var child = inventorySlots[i].GetComponentInChildren<InventoryItem>();
-			if (child == item) return i;
-		}
-		return -1;
-	}
-
-	private InventorySlot GetEmptySlotInRange(int start, int end)
-	{
-		start = Mathf.Clamp(start, 0, inventorySlots.Length - 1);
-		end = Mathf.Clamp(end, 0, inventorySlots.Length - 1);
-
-		for (int i = start; i <= end; i++)
-		{
-			var slot = inventorySlots[i];
-			if (slot != null && slot.transform.childCount == 0)
-				return slot;
-		}
-
-		return null;
-	}
-
-	private int MoveStackableCountIntoRange(Item item, int count, int start, int end)
-	{
-		if (item == null || count <= 0) return 0;
-
-		int remaining = count;
-		int max = maxStackedItems;
-
-		start = Mathf.Clamp(start, 0, inventorySlots.Length - 1);
-		end = Mathf.Clamp(end, 0, inventorySlots.Length - 1);
-
-		for (int i = start; i <= end && remaining > 0; i++)
-		{
-			var slot = inventorySlots[i];
-			if (slot == null) continue;
-
-			var slotItem = slot.GetComponentInChildren<InventoryItem>();
-			if (slotItem == null) continue;
-
-			if (slotItem.item == item && slotItem.count < max)
-			{
-				int space = max - slotItem.count;
-				int add = Mathf.Min(space, remaining);
-				slotItem.count += add;
-				slotItem.RefreshCount();
-				remaining -= add;
-			}
-		}
-
-		for (int i = start; i <= end && remaining > 0; i++)
-		{
-			var slot = inventorySlots[i];
-			if (slot == null) continue;
-			if (slot.transform.childCount != 0) continue;
-
-			int place = Mathf.Min(max, remaining);
-			SpawnNewItem(item, slot, place);
-			remaining -= place;
-		}
-
-		return count - remaining;
-	}
-
 	private void RebuildCountsIfDirty()
 	{
 		if (!countsDirty) return;
 		countsDirty = false;
-
 		itemCounts.Clear();
 
 		if (inventorySlots == null) return;
@@ -271,128 +202,27 @@ public class InventoryManager : MonoBehaviour
 
 	public Item GetSelectedItem()
 	{
-		var slot = inventorySlots[selectedSlot];
-		var itemInSlot = slot.GetComponentInChildren<InventoryItem>();
-		return itemInSlot?.item;
+		return inventorySlots[selectedSlot].GetComponentInChildren<InventoryItem>()?.item;
 	}
 
-	public InventorySlot GetEmptySlot()
-	{
-		foreach (var slot in inventorySlots)
-		{
-			if (slot != null && slot.transform.childCount == 0)
-				return slot;
-		}
-		return null;
-	}
+	public InventorySlot GetEmptySlot() => container.GetEmptySlot();
 
 	public bool TryStoreInventoryItem(InventoryItem sourceItem, bool showNotification = false)
 	{
-		if (sourceItem == null || sourceItem.item == null) return false;
-
-		if (sourceItem is WaterContainerInventoryItem)
-		{
-			var empty = GetEmptySlot();
-			if (empty == null) return false;
-
-			sourceItem.transform.SetParent(empty.transform, false);
-			sourceItem.transform.localPosition = Vector3.zero;
-
-			MarkCountsDirty();
-			return true;
-		}
-
-		var item = sourceItem.item;
-
-		if (item.stackable && sourceItem.count > 0)
-		{
-			int moved = AddItemPartial(item, sourceItem.count, showNotification);
-			if (moved <= 0) return false;
-
-			sourceItem.count -= moved;
-			sourceItem.RefreshCount();
-
-			if (sourceItem.count <= 0)
-				Destroy(sourceItem.gameObject);
-
-			MarkCountsDirty();
-			return true;
-		}
-
-		if (!item.stackable)
-		{
-			var empty = GetEmptySlot();
-			if (empty == null) return false;
-
-			sourceItem.transform.SetParent(empty.transform, false);
-			sourceItem.transform.localPosition = Vector3.zero;
-
-			MarkCountsDirty();
-			return true;
-		}
-
-		return false;
+		bool stored = container.TryStoreInventoryItem(sourceItem);
+		if (stored) MarkCountsDirty();
+		return stored;
 	}
 
 	public int AddItemPartial(Item item, int count, bool showNotification = true)
 	{
-		if (item == null || count <= 0) return 0;
-
-		if (item is WaterContainerItem)
+		int added = container.AddItemPartial(item, count);
+		if (added > 0)
 		{
-			int added = 0;
-			for (int i = 0; i < inventorySlots.Length && added < count; i++)
-			{
-				var slotItem = inventorySlots[i].GetComponentInChildren<InventoryItem>();
-				if (slotItem != null) continue;
-
-				SpawnNewItem(item, inventorySlots[i], 1);
-				added += 1;
-			}
-
-			if (showNotification && added > 0)
-				ShowItemNotification(item, added);
-
-			if (added > 0) MarkCountsDirty();
-			return added;
+			if (showNotification) ShowItemNotification(item, added);
+			MarkCountsDirty();
 		}
-
-		int remaining = count;
-
-		if (item.stackable)
-		{
-			for (int i = 0; i < inventorySlots.Length && remaining > 0; i++)
-			{
-				InventoryItem slotItem = inventorySlots[i].GetComponentInChildren<InventoryItem>();
-				if (slotItem != null && slotItem.item == item && slotItem.count < maxStackedItems)
-				{
-					int spaceLeft = maxStackedItems - slotItem.count;
-					int amountToAdd = Mathf.Min(remaining, spaceLeft);
-					slotItem.count += amountToAdd;
-					slotItem.RefreshCount();
-					remaining -= amountToAdd;
-				}
-			}
-		}
-
-		for (int i = 0; i < inventorySlots.Length && remaining > 0; i++)
-		{
-			InventoryItem slotItem = inventorySlots[i].GetComponentInChildren<InventoryItem>();
-			if (slotItem == null)
-			{
-				int amountToPlace = item.stackable ? Mathf.Min(remaining, maxStackedItems) : 1;
-				SpawnNewItem(item, inventorySlots[i], amountToPlace);
-				remaining -= amountToPlace;
-			}
-		}
-
-		int addedFinal = count - remaining;
-
-		if (showNotification && addedFinal > 0)
-			ShowItemNotification(item, addedFinal);
-
-		if (addedFinal > 0) MarkCountsDirty();
-		return addedFinal;
+		return added;
 	}
 
 	public bool AddItem(Item item, int count = 1, bool showNotification = true)
@@ -402,27 +232,8 @@ public class InventoryManager : MonoBehaviour
 
 	public void RemoveItem(string itemName, int count)
 	{
-		if (string.IsNullOrEmpty(itemName) || count <= 0) return;
-
-		int remainingToRemove = count;
-		foreach (var slot in inventorySlots)
-		{
-			if (remainingToRemove <= 0) break;
-
-			InventoryItem slotItem = slot.GetComponentInChildren<InventoryItem>();
-			if (slotItem != null && slotItem.item != null && slotItem.item.name == itemName && slotItem.count > 0)
-			{
-				int amountToRemove = Mathf.Min(remainingToRemove, slotItem.count);
-				slotItem.count -= amountToRemove;
-				slotItem.RefreshCount();
-				remainingToRemove -= amountToRemove;
-
-				if (slotItem.count <= 0)
-					Destroy(slotItem.gameObject);
-			}
-		}
-
-		if (remainingToRemove != count) MarkCountsDirty();
+		container.RemoveItem(itemName, count);
+		MarkCountsDirty();
 	}
 
 	public InventoryItem GetInventoryItemByName(string itemName)
@@ -450,7 +261,7 @@ public class InventoryManager : MonoBehaviour
 
 	public List<Item> GenerateLoot()
 	{
-		List<Item> loot = new List<Item>();
+		var loot = new List<Item>();
 		int numberOfItems = Random.Range(4, 6);
 
 		for (int i = 0; i < numberOfItems; i++)
@@ -469,49 +280,13 @@ public class InventoryManager : MonoBehaviour
 
 	public void SpawnNewItem(Item item, InventorySlot slot, int count = 1)
 	{
-		if (item is WaterContainerItem waterItem)
-		{
-			if (waterContainerItemPrefab == null)
-			{
-				Debug.LogError("WaterContainerItemPrefab is not assigned in InventoryManager!");
-				return;
-			}
-
-			GameObject newItemGo = Instantiate(waterContainerItemPrefab, slot.transform);
-			WaterContainerInventoryItem inventoryItem = newItemGo.GetComponent<WaterContainerInventoryItem>();
-			inventoryItem.InitialiseWaterContainer(waterItem);
-			inventoryItem.currentFill = 0;
-			inventoryItem.isSaltWater = false;
-			inventoryItem.UpdateSprite();
-			inventoryItem.count = 1;
-			inventoryItem.RefreshCount();
-		}
-		else
-		{
-			GameObject newItemGo = Instantiate(inventoryItemPrefab, slot.transform);
-			InventoryItem inventoryItem = newItemGo.GetComponent<InventoryItem>();
-			inventoryItem.InitialiseItem(item);
-			inventoryItem.count = count;
-			inventoryItem.RefreshCount();
-		}
-
+		container.SpawnItem(item, slot, count);
 		MarkCountsDirty();
 	}
 
 	public void SpawnNewWaterContainerInSlot(WaterContainerItem wc, InventorySlot slot, int fill, bool salt)
 	{
-		if (wc == null || slot == null) return;
-		if (waterContainerItemPrefab == null) return;
-
-		GameObject go = Instantiate(waterContainerItemPrefab, slot.transform);
-		var wii = go.GetComponent<WaterContainerInventoryItem>();
-		wii.InitialiseWaterContainer(wc);
-		wii.currentFill = Mathf.Clamp(fill, 0, wc.maxFillCapacity);
-		wii.isSaltWater = salt;
-		wii.UpdateSprite();
-		wii.count = 1;
-		wii.RefreshCount();
-
+		container.SpawnWaterContainer(wc, slot, fill, salt);
 		MarkCountsDirty();
 	}
 
@@ -527,70 +302,18 @@ public class InventoryManager : MonoBehaviour
 
 	public InventoryData CaptureInventoryState()
 	{
-		var data = new InventoryData();
-		data.selectedSlotIndex = SelectedSlotIndex;
-
-		data.slots.Clear();
-		for (int i = 0; i < inventorySlots.Length; i++)
+		return new InventoryData
 		{
-			var slot = inventorySlots[i];
-			var invItem = slot.GetComponentInChildren<InventoryItem>();
-
-			if (invItem == null)
-			{
-				data.slots.Add(new InventorySlotData());
-				continue;
-			}
-
-			var sd = new InventorySlotData
-			{
-				itemId = invItem.item != null ? invItem.item.name : null,
-				count = invItem.count
-			};
-
-			var water = invItem as WaterContainerInventoryItem;
-			if (water != null)
-			{
-				sd.isWaterContainer = true;
-				sd.waterFill = water.currentFill;
-				sd.isSaltWater = water.isSaltWater;
-			}
-
-			data.slots.Add(sd);
-		}
-
-		return data;
+			selectedSlotIndex = SelectedSlotIndex,
+			slots = container.CaptureState()
+		};
 	}
 
 	public void RestoreInventoryState(InventoryData data, ItemDatabase itemDb)
 	{
 		if (data == null) return;
 
-		for (int i = 0; i < inventorySlots.Length; i++)
-		{
-			var slot = inventorySlots[i];
-			for (int c = slot.transform.childCount - 1; c >= 0; c--)
-				Destroy(slot.transform.GetChild(c).gameObject);
-		}
-
-		for (int i = 0; i < inventorySlots.Length && i < data.slots.Count; i++)
-		{
-			var sd = data.slots[i];
-			if (sd == null || string.IsNullOrEmpty(sd.itemId) || sd.count <= 0) continue;
-
-			var item = itemDb.Get(sd.itemId);
-			if (item == null) continue;
-
-			if (sd.isWaterContainer && item is WaterContainerItem wc)
-			{
-				SpawnNewWaterContainerInSlot(wc, inventorySlots[i], Mathf.RoundToInt(sd.waterFill), sd.isSaltWater);
-			}
-			else
-			{
-				SpawnNewItem(item, inventorySlots[i], sd.count);
-			}
-		}
-
+		container.RestoreState(data.slots, itemDb);
 		SelectedSlotIndex = Mathf.Clamp(data.selectedSlotIndex, 0, inventorySlots.Length - 1);
 
 		MarkCountsDirty();

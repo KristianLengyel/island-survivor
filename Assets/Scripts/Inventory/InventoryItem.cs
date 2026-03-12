@@ -182,34 +182,50 @@ public class InventoryItem : MonoBehaviour,
 		{
 			if (isInChest)
 			{
-				int added = inventoryManager.AddItemPartial(item, count, showNotification: false);
-				if (added <= 0) return;
-
-				if (added >= count)
+				if (this is WaterContainerInventoryItem)
 				{
-					Destroy(gameObject);
-					Tooltip.Instance.HideTooltip();
+					if (inventoryManager.TryStoreInventoryItem(this))
+						Tooltip.Instance?.HideTooltip();
 				}
 				else
 				{
-					count -= added;
-					RefreshCount();
+					int added = inventoryManager.AddItemPartial(item, count, showNotification: false);
+					if (added <= 0) return;
+
+					if (added >= count)
+					{
+						Destroy(gameObject);
+						Tooltip.Instance.HideTooltip();
+					}
+					else
+					{
+						count -= added;
+						RefreshCount();
+					}
 				}
 			}
 			else if (inventoryManager.IsInventoryOpen())
 			{
-				int added = activeChest.AddItemPartial(item, count);
-				if (added <= 0) return;
-
-				if (added >= count)
+				if (this is WaterContainerInventoryItem)
 				{
-					Destroy(gameObject);
-					Tooltip.Instance.HideTooltip();
+					if (activeChest.TryStoreInventoryItem(this))
+						Tooltip.Instance?.HideTooltip();
 				}
 				else
 				{
-					count -= added;
-					RefreshCount();
+					int added = activeChest.AddItemPartial(item, count);
+					if (added <= 0) return;
+
+					if (added >= count)
+					{
+						Destroy(gameObject);
+						Tooltip.Instance.HideTooltip();
+					}
+					else
+					{
+						count -= added;
+						RefreshCount();
+					}
 				}
 			}
 
