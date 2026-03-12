@@ -7,11 +7,19 @@ public class InventoryInputHandler : MonoBehaviour
 
 	private void Start()
 	{
-		inventoryManager = GameManager.Instance.InventoryManager;
+		inventoryManager = GameManager.Instance?.InventoryManager;
+		if (inventoryManager == null)
+			Debug.LogError("[InventoryInputHandler] InventoryManager reference is null. Check GameManager inspector assignment.");
 	}
 
 	private void Update()
 	{
+		if (inventoryManager == null)
+		{
+			inventoryManager = GameManager.Instance?.InventoryManager;
+			return;
+		}
+
 		if (GameInput.InventoryDown)
 		{
 			if (!inventoryManager.InventoryLocked)

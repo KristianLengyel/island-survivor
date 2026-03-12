@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
-public class CatchingNet : MonoBehaviour, IInteractable
+public class CatchingNet : MonoBehaviour, IInteractable, ISaveableComponent
 {
 	public int MaxCaughtItems = 10;
 	private List<GameObject> caughtItems = new List<GameObject>();
@@ -122,5 +122,57 @@ public class CatchingNet : MonoBehaviour, IInteractable
 
 		return mouseWorldPos.x >= spriteMin.x && mouseWorldPos.x <= spriteMax.x &&
 			   mouseWorldPos.y >= spriteMin.y && mouseWorldPos.y <= spriteMax.y;
+	}
+
+	// --- ISaveableComponent ---
+
+	public string SaveKey => "CatchingNet";
+
+	[System.Serializable]
+	private class NetState
+	{
+		public List<string> caughtItemIds = new List<string>();
+	}
+
+	public string CaptureStateJson()
+	{
+		var state = new NetState();
+		foreach (var go in caughtItems)
+		{
+			if (go == null) continue;
+			var clickable = go.GetComponent<ClickableObject>();
+			if (clickable != null && clickable.item != null)
+				state.caughtItemIds.Add(clickable.item.name);
+		}
+		return JsonUtility.ToJson(state);
+	}
+
+	public void RestoreStateJson(string json)
+	{
+		if (string.IsNullOrEmpty(json)) return;
+
+		var state = JsonUtility.FromJson<NetState>(json);
+		if (state == null || state.caughtItemIds == null) return;
+
+		var saveMgr = FindAnyObjectByType<SaveGameManager>();
+		if (saveMgr == null || saveMgr.itemDatabase == null) return;
+
+		for (int i = caughtItems.Count - 1; i >= 0; i--)
+			if (caughtItems[i] != null) Destroy(caughtItems[i]);
+		caughtItems.Clear();
+
+		foreach (var itemId in state.caughtItemIds)
+		{
+			var item = saveMgr.itemDatabase.Get(itemId);
+			if (item == null || item.prefab == null) continue;
+
+			var go = Instantiate(item.prefab, transform);
+			go.transform.localPosition = Vector3.zero;
+			go.transform.localRotation = Quaternion.identity;
+			caughtItems.Add(go);
+
+			var clickable = go.GetComponent<ClickableObject>();
+			if (clickable != null) clickable.SetHooked(true);
+		}
 	}
 }

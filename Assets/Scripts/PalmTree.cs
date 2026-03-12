@@ -311,7 +311,7 @@ public class PalmTree : MonoBehaviour, IInteractable, ISaveableComponent
 		return JsonUtility.ToJson(new PalmTreeState
 		{
 			hp = currentHealth,
-			felled = true
+			felled = isFelled
 		});
 	}
 

@@ -79,6 +79,7 @@ public class TileData
 {
 	public int x, y, z;
 	public string tileId;
+	public float r, g, b, a;
 }
 
 [Serializable]

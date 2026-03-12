@@ -17,6 +17,12 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 	private bool isOpen = false;
 	private InventoryContainer container;
 
+	private void EnsureContainer()
+	{
+		if (container == null)
+			container = GameManager.Instance.InventoryManager.CreateContainer(chestSlots);
+	}
+
 	public float interactionRange = 2f;
 
 	public static Chest CurrentOpenChest { get; private set; }
@@ -43,7 +49,7 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 		if (spriteRenderer != null && normalSprite != null)
 			spriteRenderer.sprite = normalSprite;
 
-		container = GameManager.Instance.InventoryManager.CreateContainer(chestSlots);
+		EnsureContainer();
 	}
 
 	private void Update()
@@ -79,13 +85,13 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 		}
 	}
 
-	public bool TryStoreInventoryItem(InventoryItem sourceItem) => container.TryStoreInventoryItem(sourceItem);
+	public bool TryStoreInventoryItem(InventoryItem sourceItem) { EnsureContainer(); return container.TryStoreInventoryItem(sourceItem); }
 
-	public int AddItemPartial(Item item, int count) => container.AddItemPartial(item, count);
+	public int AddItemPartial(Item item, int count) { EnsureContainer(); return container.AddItemPartial(item, count); }
 
-	public bool AddItem(Item item, int count = 1) => container.AddItem(item, count);
+	public bool AddItem(Item item, int count = 1) { EnsureContainer(); return container.AddItem(item, count); }
 
-	public void RemoveItem(string itemName, int count) => container.RemoveItem(itemName, count);
+	public void RemoveItem(string itemName, int count) { EnsureContainer(); container.RemoveItem(itemName, count); }
 
 	public bool HasAnyItems()
 	{
@@ -128,6 +134,7 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 
 	public string CaptureStateJson()
 	{
+		EnsureContainer();
 		var state = new ChestState { slots = container.CaptureState() };
 		return JsonUtility.ToJson(state);
 	}
@@ -142,6 +149,7 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 		var saveMgr = FindAnyObjectByType<SaveGameManager>();
 		if (saveMgr == null || saveMgr.itemDatabase == null) return;
 
+		EnsureContainer();
 		container.RestoreState(state.slots, saveMgr.itemDatabase);
 	}
 }
