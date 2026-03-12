@@ -17,6 +17,7 @@ public class SaveGameManager : MonoBehaviour
 	public DayNightCycle dayNightCycle;
 	public PlayerStats playerStats;
 	public MapDisplayManager mapDisplayManager;
+	public MapGeneratorV3 mapGenerator;
 
 	[Header("Placed Prefabs")]
 	public Transform placedPrefabsParent;
@@ -39,11 +40,21 @@ public class SaveGameManager : MonoBehaviour
 
 		if (playerStats == null) playerStats = FindAnyObjectByType<PlayerStats>();
 		if (mapDisplayManager == null) mapDisplayManager = FindAnyObjectByType<MapDisplayManager>();
+		if (mapGenerator == null) mapGenerator = FindAnyObjectByType<MapGeneratorV3>();
 
 		if (placedPrefabsParent == null)
 		{
 			var go = GameObject.Find("PlacedPrefabs");
 			if (go != null) placedPrefabsParent = go.transform;
+		}
+
+		// Force the map generator to use the saved seed before its Start() runs,
+		// so palm trees and other decorations regenerate at the exact same positions.
+		if (GameBoot.LoadRequested && SaveIO.Exists() && mapGenerator != null)
+		{
+			var earlyData = SaveIO.Read();
+			if (earlyData != null && earlyData.mapSeed != 0)
+				mapGenerator.ForceSeed(earlyData.mapSeed);
 		}
 	}
 
@@ -69,6 +80,9 @@ public class SaveGameManager : MonoBehaviour
 	public void Save()
 	{
 		var data = new SaveGameData();
+
+		if (mapGenerator != null)
+			data.mapSeed = mapGenerator.LastSeed;
 
 		if (player != null)
 		{

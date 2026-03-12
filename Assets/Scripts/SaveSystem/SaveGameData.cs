@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class SaveGameData
 {
 	public int version = 1;
+	public uint mapSeed;
 
 	public PlayerData player = new PlayerData();
 	public PlayerStatsData playerStats = new PlayerStatsData();

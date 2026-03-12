@@ -29,34 +29,41 @@ public class MapGeneratorV3 : MonoBehaviour
 		? sizePresets[(int)selectedPreset]
 		: null;
 
-	[Header("Decorator Parents")]
-	[Tooltip("Must NOT be a child of tilemapGrid.")]
-	public Transform palmParent;
-	[Tooltip("Must NOT be a child of tilemapGrid.")]
-	public Transform rockParent;
-
 	private readonly MapWorkspaceV3 _w = new MapWorkspaceV3();
-	private readonly List<GameObject> _activePalms = new List<GameObject>();
-	private readonly List<GameObject> _activeRocks = new List<GameObject>();
-	private readonly Stack<GameObject> _palmPool = new Stack<GameObject>();
-	private readonly Stack<GameObject> _rockPool = new Stack<GameObject>();
 
 	private bool _generating = false;
+	private uint _lastSeed;
+	private uint _forcedSeed;
+
+	public uint LastSeed => _lastSeed;
+
+	/// <summary>Forces the next Regenerate() call to use this seed instead of a random one. Consumed after one use.</summary>
+	public void ForceSeed(uint seed) { _forcedSeed = seed; }
 
 	private void Start() => Regenerate();
 
 	public void Regenerate()
 	{
 		if (settings == null) return;
-		uint seed = settings.useRandomSeed
-			? (uint)System.DateTime.UtcNow.Ticks
-			: MapRngV3.HashSeed(settings.seedInput);
+		uint seed;
+		if (_forcedSeed != 0)
+		{
+			seed = _forcedSeed;
+			_forcedSeed = 0;
+		}
+		else
+		{
+			seed = settings.useRandomSeed
+				? (uint)System.DateTime.UtcNow.Ticks
+				: MapRngV3.HashSeed(settings.seedInput);
+		}
 		Regenerate(seed);
 	}
 
 	public void Regenerate(uint seed)
 	{
 		if (settings == null || _generating) return;
+		_lastSeed = seed;
 		StartCoroutine(RegenerateAsync(seed));
 	}
 
@@ -65,7 +72,6 @@ public class MapGeneratorV3 : MonoBehaviour
 		_generating = true;
 
 		_w.Ensure(settings.mapSize, Mathf.Max(0, settings.pad));
-		ReturnAllToPool();
 
 		var w = _w;
 		var s = settings;
@@ -107,16 +113,22 @@ public class MapGeneratorV3 : MonoBehaviour
 			yield break;
 		}
 
+		// Build chunks
 		_w.chunks = MapChunkBuilderV3.Build(_w.data, settings, _w);
 		_w.chunkSize = Mathf.Max(1, settings.chunkSize);
 		_w.chunkCols = Mathf.CeilToInt((float)settings.mapSize / _w.chunkSize);
 		_w.chunkRows = Mathf.CeilToInt((float)settings.mapSize / _w.chunkSize);
 
+		// Build per-chunk decorator index lists (fast, no GameObjects yet)
+		BuildChunkDecoratorLists(ref rng);
+
+		// Reposition grid
 		int half = settings.mapSize / 2;
 		int padOff = Mathf.Max(0, settings.pad);
 		if (tilemapGrid != null)
 			tilemapGrid.transform.position = new Vector3(-half - padOff, -half - padOff, 0f);
 
+		// Clear all tilemaps
 		waterTilemap?.ClearAllTiles();
 		landTilemap?.ClearAllTiles();
 		grassTilemap?.ClearAllTiles();
@@ -126,8 +138,8 @@ public class MapGeneratorV3 : MonoBehaviour
 		oceanFloorDeepTilemap?.ClearAllTiles();
 
 		PaintDock();
-		SpawnDecorators(ref rng);
 
+		// Hand off to streamer — it handles all chunk painting and decorator spawning
 		var streamer = GetComponent<MapChunkStreamerV3>();
 		if (streamer != null)
 			streamer.OnMapRegenerated(_w, _w.data, settings);
@@ -139,9 +151,107 @@ public class MapGeneratorV3 : MonoBehaviour
 		_generating = false;
 	}
 
+	/// <summary>
+	/// Walks all tiles once and bins each palm/rock candidate into its owning chunk's list.
+	/// Uses Poisson-disk min-distance filtering (same as old SpawnDecorators) but stores
+	/// positions as data only — no GameObjects created here.
+	/// </summary>
+	private void BuildChunkDecoratorLists(ref MapRngV3 rng)
+	{
+		int chunkCount = _w.chunks.Length;
+		_w.EnsureChunkDecoratorStorage(chunkCount);
+		_w.ClearChunkDecoratorStorage(chunkCount);
+
+		MapDataV3 d = _w.data;
+		int size = d.size;
+
+		// ---- Collect & shuffle candidates ----
+		_w.palmCandidates.Clear();
+		_w.rockCandidates.Clear();
+
+		for (int y = 0; y < size; y++)
+		{
+			int row = y * size;
+			for (int x = 0; x < size; x++)
+			{
+				int i = row + x;
+				if (d.palmTile[i] == 1) _w.palmCandidates.Add(i);
+				if (d.rockTile[i] == 1) _w.rockCandidates.Add(i);
+			}
+		}
+
+		Shuffle(_w.palmCandidates, ref rng);
+		Shuffle(_w.rockCandidates, ref rng);
+
+		// ---- Palm min-distance grid ----
+		int palmMinDist = 6;
+		if (settings.biomeDefinitions != null && settings.biomeDefinitions.Length > 0)
+			palmMinDist = settings.biomeDefinitions[0].palmMinDistance;
+
+		float palmCell = Mathf.Max(1f, palmMinDist / 1.41421356f);
+		int palmGW = Mathf.CeilToInt(size / palmCell);
+		int palmGH = Mathf.CeilToInt(size / palmCell);
+
+		float rockCell = Mathf.Max(1f, settings.rockMinDistance / 1.41421356f);
+		int rockGW = Mathf.CeilToInt(size / rockCell);
+		int rockGH = Mathf.CeilToInt(size / rockCell);
+
+		int gridNeed = Mathf.Max(palmGW * palmGH, rockGW * rockGH);
+		if (_w.palmGrid == null || _w.palmGrid.Length < gridNeed)
+		{
+			_w.palmGrid = new int[gridNeed];
+			_w.rockGrid = new int[gridNeed];
+		}
+		for (int k = 0; k < palmGW * palmGH; k++) _w.palmGrid[k] = -1;
+		for (int k = 0; k < rockGW * rockGH; k++) _w.rockGrid[k] = -1;
+
+		// ---- Filter palms and bin into chunks ----
+		foreach (int idx in _w.palmCandidates)
+		{
+			var bdef = settings.GetBiome((BiomeType)d.biome[idx]);
+			if (bdef == null || bdef.palmPrefab == null) continue;
+			if (rng.Next01() > bdef.palmSpawnChance) continue;
+
+			int x = idx % size;
+			int y = idx / size;
+			int minD = bdef.palmMinDistance;
+
+			if (!CheckMinDistanceGrid(_w.palmGrid, x, y, minD, palmCell, palmGW, palmGH)) continue;
+
+			int gcx = Mathf.Clamp((int)(x / palmCell), 0, palmGW - 1);
+			int gcy = Mathf.Clamp((int)(y / palmCell), 0, palmGH - 1);
+			_w.palmGrid[gcy * palmGW + gcx] = idx;
+
+			int chunkIdx = _w.GetChunkIndex(x, y);
+			if (chunkIdx >= 0)
+				_w.chunkPalmIndices[chunkIdx].Add(idx);
+		}
+
+		// ---- Filter rocks and bin into chunks ----
+		foreach (int idx in _w.rockCandidates)
+		{
+			var bdef = settings.GetBiome((BiomeType)d.biome[idx]);
+			if (bdef == null || bdef.rockPrefab == null) continue;
+			if (rng.Next01() > bdef.rockSpawnChance) continue;
+
+			int x = idx % size;
+			int y = idx / size;
+			int minD = settings.rockMinDistance;
+
+			if (!CheckMinDistanceGrid(_w.rockGrid, x, y, minD, rockCell, rockGW, rockGH)) continue;
+
+			int gcx = Mathf.Clamp((int)(x / rockCell), 0, rockGW - 1);
+			int gcy = Mathf.Clamp((int)(y / rockCell), 0, rockGH - 1);
+			_w.rockGrid[gcy * rockGW + gcx] = idx;
+
+			int chunkIdx = _w.GetChunkIndex(x, y);
+			if (chunkIdx >= 0)
+				_w.chunkRockIndices[chunkIdx].Add(idx);
+		}
+	}
+
 	public void ClearAll()
 	{
-		ReturnAllToPool();
 		waterTilemap?.ClearAllTiles();
 		landTilemap?.ClearAllTiles();
 		grassTilemap?.ClearAllTiles();
@@ -173,92 +283,6 @@ public class MapGeneratorV3 : MonoBehaviour
 		dockTilemap.SetTilesBlock(bounds, buf);
 	}
 
-	private void SpawnDecorators(ref MapRngV3 rng)
-	{
-		MapDataV3 d = _w.data;
-		int size = d.size;
-
-		_w.palmCandidates.Clear();
-		_w.palmAccepted.Clear();
-		_w.rockCandidates.Clear();
-		_w.rockAccepted.Clear();
-
-		for (int y = 0; y < size; y++)
-		{
-			int row = y * size;
-			for (int x = 0; x < size; x++)
-			{
-				int i = row + x;
-				if (d.palmTile[i] == 1) _w.palmCandidates.Add(i);
-				if (d.rockTile[i] == 1) _w.rockCandidates.Add(i);
-			}
-		}
-
-		Shuffle(_w.palmCandidates, ref rng);
-		Shuffle(_w.rockCandidates, ref rng);
-
-		int palmMinDist = 0;
-		if (settings.biomeDefinitions != null && settings.biomeDefinitions.Length > 0)
-			palmMinDist = settings.biomeDefinitions[0].palmMinDistance;
-
-		float palmCell = Mathf.Max(1f, palmMinDist / 1.41421356f);
-		float rockCell = Mathf.Max(1f, settings.rockMinDistance / 1.41421356f);
-		int palmGW = Mathf.CeilToInt(size / palmCell);
-		int palmGH = Mathf.CeilToInt(size / palmCell);
-		int rockGW = Mathf.CeilToInt(size / rockCell);
-		int rockGH = Mathf.CeilToInt(size / rockCell);
-
-		int palmGridSize = Mathf.Max(palmGW * palmGH, rockGW * rockGH);
-		if (_w.palmGrid == null || _w.palmGrid.Length < palmGridSize)
-		{
-			_w.palmGrid = new int[palmGridSize];
-			_w.rockGrid = new int[palmGridSize];
-		}
-		for (int k = 0; k < palmGW * palmGH; k++) _w.palmGrid[k] = -1;
-		for (int k = 0; k < rockGW * rockGH; k++) _w.rockGrid[k] = -1;
-
-		Transform pp = palmParent != null ? palmParent : transform;
-		Transform rp = rockParent != null ? rockParent : transform;
-
-		foreach (int idx in _w.palmCandidates)
-		{
-			var bdef = settings.GetBiome((BiomeType)d.biome[idx]);
-			if (bdef == null || bdef.palmPrefab == null) continue;
-			if (rng.Next01() > bdef.palmSpawnChance) continue;
-
-			int x = idx % size;
-			int y = idx / size;
-			int minD = bdef.palmMinDistance;
-			if (!CheckMinDistanceGrid(_w.palmGrid, x, y, minD, palmCell, palmGW, palmGH)) continue;
-
-			int gcx = Mathf.Clamp((int)(x / palmCell), 0, palmGW - 1);
-			int gcy = Mathf.Clamp((int)(y / palmCell), 0, palmGH - 1);
-			_w.palmGrid[gcy * palmGW + gcx] = idx;
-			_w.palmAccepted.Add(new Vector2Int(x, y));
-
-			GetPooled(_palmPool, bdef.palmPrefab, pp).transform.position = GetWorldPos(x, y);
-		}
-
-		foreach (int idx in _w.rockCandidates)
-		{
-			var bdef = settings.GetBiome((BiomeType)d.biome[idx]);
-			if (bdef == null || bdef.rockPrefab == null) continue;
-			if (rng.Next01() > bdef.rockSpawnChance) continue;
-
-			int x = idx % size;
-			int y = idx / size;
-			int minD = settings.rockMinDistance;
-			if (!CheckMinDistanceGrid(_w.rockGrid, x, y, minD, rockCell, rockGW, rockGH)) continue;
-
-			int gcx = Mathf.Clamp((int)(x / rockCell), 0, rockGW - 1);
-			int gcy = Mathf.Clamp((int)(y / rockCell), 0, rockGH - 1);
-			_w.rockGrid[gcy * rockGW + gcx] = idx;
-			_w.rockAccepted.Add(new Vector2Int(x, y));
-
-			GetPooled(_rockPool, bdef.rockPrefab, rp).transform.position = GetWorldPos(x, y);
-		}
-	}
-
 	private bool CheckMinDistanceGrid(int[] grid, int x, int y, int minD,
 		float cellSize, int gw, int gh)
 	{
@@ -266,8 +290,7 @@ public class MapGeneratorV3 : MonoBehaviour
 		int gcx = Mathf.Clamp((int)(x / cellSize), 0, gw - 1);
 		int gcy = Mathf.Clamp((int)(y / cellSize), 0, gh - 1);
 		int rCells = Mathf.CeilToInt(minD / cellSize) + 1;
-		MapDataV3 d = _w.data;
-		int size = d.size;
+		int size = _w.data.size;
 
 		for (int gy = gcy - rCells; gy <= gcy + rCells; gy++)
 		{
@@ -279,53 +302,11 @@ public class MapGeneratorV3 : MonoBehaviour
 				int stored = grid[grow + gx];
 				if (stored < 0) continue;
 				int ox = stored % size, oy = stored / size;
-				int dx = ox - x, dy = oy - y;
-				if (dx * dx + dy * dy < minD2) return false;
+				int dx = ox - x, dy2 = oy - y;
+				if (dx * dx + dy2 * dy2 < minD2) return false;
 			}
 		}
 		return true;
-	}
-
-	private Vector3 GetWorldPos(int x, int y)
-	{
-		Vector3 gridOrigin = tilemapGrid != null
-			? tilemapGrid.transform.position
-			: Vector3.zero;
-		return new Vector3(gridOrigin.x + x + 0.5f, gridOrigin.y + y + 0.5f, 0f);
-	}
-
-	private GameObject GetPooled(Stack<GameObject> pool, GameObject prefab, Transform parent)
-	{
-		GameObject go;
-		if (pool.Count > 0 && (go = pool.Pop()) != null)
-		{
-			go.transform.SetParent(parent, true);
-			go.SetActive(true);
-		}
-		else
-		{
-			go = Instantiate(prefab, parent);
-		}
-		var list = pool == _palmPool ? _activePalms : _activeRocks;
-		list.Add(go);
-		return go;
-	}
-
-	private void ReturnAllToPool()
-	{
-		ReturnList(_activePalms, _palmPool);
-		ReturnList(_activeRocks, _rockPool);
-	}
-
-	private static void ReturnList(List<GameObject> list, Stack<GameObject> pool)
-	{
-		for (int i = list.Count - 1; i >= 0; i--)
-		{
-			if (list[i] == null) continue;
-			list[i].SetActive(false);
-			pool.Push(list[i]);
-		}
-		list.Clear();
 	}
 
 	private static void Shuffle(List<int> list, ref MapRngV3 rng)
