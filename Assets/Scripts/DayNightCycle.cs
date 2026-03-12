@@ -245,11 +245,12 @@ public class DayNightCycle : MonoBehaviour
 	public bool GetIsRainyDay() => isRainyDay;
 	public bool GetIsStormyDay() => isStormyDay;
 
-	public void SetState(float cycleTimerValue, int dayCountValue, bool isRainyDayValue)
+	public void SetState(float cycleTimerValue, int dayCountValue, bool isRainyDayValue, bool isStormyDayValue = false)
 	{
 		cycleTimer = cycleTimerValue;
 		dayCount = dayCountValue;
 		isRainyDay = isRainyDayValue;
+		isStormyDay = isStormyDayValue;
 
 		UpdateClockText();
 		UpdateDayCountText();

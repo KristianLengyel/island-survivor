@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.VFX;
 
-public class WeatherManager : MonoBehaviour, ISaveableComponent
+public class WeatherManager : MonoBehaviour
 {
 	[Header("References")]
 	public Transform player;
@@ -114,32 +114,4 @@ public class WeatherManager : MonoBehaviour, ISaveableComponent
 	public bool IsRainActive() => rainActive;
 	public bool IsFogActive() => fogActive;
 
-	public string SaveKey => "Weather";
-
-	[System.Serializable]
-	private class WeatherState
-	{
-		public bool rain;
-		public bool fog;
-	}
-
-	public string CaptureStateJson()
-	{
-		return JsonUtility.ToJson(new WeatherState
-		{
-			rain = rainActive,
-			fog = fogActive
-		});
-	}
-
-	public void RestoreStateJson(string json)
-	{
-		if (string.IsNullOrEmpty(json)) return;
-
-		var st = JsonUtility.FromJson<WeatherState>(json);
-		if (st == null) return;
-
-		EnableRain(st.rain);
-		EnableFog(st.fog);
-	}
 }

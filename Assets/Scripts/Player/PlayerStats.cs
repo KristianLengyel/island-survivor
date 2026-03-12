@@ -83,10 +83,11 @@ public class PlayerStats : MonoBehaviour
 	public float GetCurrentStamina() => currentStamina;
 	public float GetStaminaPercentage() => maxStamina <= 0f ? 0f : Mathf.Clamp01(currentStamina / maxStamina);
 
-	public void SetState(float thirst, float hunger)
+	public void SetState(float thirst, float hunger, float stamina = -1f)
 	{
 		currentThirst = Mathf.Clamp(thirst, 0f, maxThirst);
 		currentHunger = Mathf.Clamp(hunger, 0f, maxHunger);
+		if (stamina >= 0f) currentStamina = Mathf.Clamp(stamina, 0f, maxStamina);
 		timeSinceLastUpdate = 0f;
 	}
 

@@ -30,6 +30,7 @@ public class PlayerStatsData
 {
 	public float thirst = 100f;
 	public float hunger = 100f;
+	public float stamina = 100f;
 }
 
 [Serializable]
@@ -45,6 +46,7 @@ public class DayNightData
 	public float cycleTimer;
 	public int dayCount;
 	public bool isRainyDay;
+	public bool isStormyDay;
 }
 
 [Serializable]

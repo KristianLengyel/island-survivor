@@ -8,6 +8,8 @@ public class SaveableEntity : MonoBehaviour
 
 	public string UniqueId => uniqueId;
 
+	public void SetId(string id) { uniqueId = id; }
+
 	private void Awake()
 	{
 		if (string.IsNullOrWhiteSpace(uniqueId))

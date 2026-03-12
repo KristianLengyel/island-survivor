@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -14,9 +15,8 @@ public class SaveGameManager : MonoBehaviour
 	public InventoryManager inventoryManager;
 	public WeatherManager weatherManager;
 	public DayNightCycle dayNightCycle;
-
-	[Header("Player Stats")]
 	public PlayerStats playerStats;
+	public MapDisplayManager mapDisplayManager;
 
 	[Header("Placed Prefabs")]
 	public Transform placedPrefabsParent;
@@ -38,6 +38,8 @@ public class SaveGameManager : MonoBehaviour
 		if (tileDatabase != null) tileDatabase.Build();
 
 		if (playerStats == null) playerStats = FindAnyObjectByType<PlayerStats>();
+		if (mapDisplayManager == null) mapDisplayManager = FindAnyObjectByType<MapDisplayManager>();
+
 		if (placedPrefabsParent == null)
 		{
 			var go = GameObject.Find("PlacedPrefabs");
@@ -45,8 +47,12 @@ public class SaveGameManager : MonoBehaviour
 		}
 	}
 
-	private void Start()
+	private IEnumerator Start()
 	{
+		// Wait one frame so all other Start() methods (DayNightCycle, WeatherManager, etc.)
+		// finish their initialization before we overwrite state with saved data.
+		yield return null;
+
 		if (GameBoot.LoadRequested && SaveIO.Exists())
 		{
 			GameBoot.LoadRequested = false;
@@ -74,6 +80,7 @@ public class SaveGameManager : MonoBehaviour
 		{
 			data.playerStats.thirst = playerStats.GetCurrentThirst();
 			data.playerStats.hunger = playerStats.GetCurrentHunger();
+			data.playerStats.stamina = playerStats.GetCurrentStamina();
 		}
 
 		if (weatherManager != null)
@@ -87,14 +94,14 @@ public class SaveGameManager : MonoBehaviour
 			data.dayNight.cycleTimer = dayNightCycle.cycleTimer;
 			data.dayNight.dayCount = dayNightCycle.GetDayCount();
 			data.dayNight.isRainyDay = dayNightCycle.GetIsRainyDay();
+			data.dayNight.isStormyDay = dayNightCycle.GetIsStormyDay();
 		}
 
 		if (inventoryManager != null)
 			data.inventory = inventoryManager.CaptureInventoryState();
 
-		var mapDisplay = FindAnyObjectByType<MapDisplayManager>();
-		if (mapDisplay != null)
-			data.playerMap = mapDisplay.CapturePlayerMapState();
+		if (mapDisplayManager != null)
+			data.playerMap = mapDisplayManager.CapturePlayerMapState();
 
 		data.tilemaps.Clear();
 		for (int i = 0; i < tilemaps.Count; i++)
@@ -127,11 +134,10 @@ public class SaveGameManager : MonoBehaviour
 			var comps = e.GetComponents<ISaveableComponent>();
 			for (int c = 0; c < comps.Length; c++)
 			{
-				var comp = comps[c];
 				wod.components.Add(new ComponentStateData
 				{
-					key = comp.SaveKey,
-					json = comp.CaptureStateJson()
+					key = comps[c].SaveKey,
+					json = comps[c].CaptureStateJson()
 				});
 			}
 
@@ -146,6 +152,7 @@ public class SaveGameManager : MonoBehaviour
 		var data = SaveIO.Read();
 		if (data == null) return;
 
+		// Restore tilemaps
 		for (int i = 0; i < tilemaps.Count; i++)
 		{
 			var b = tilemaps[i];
@@ -156,12 +163,12 @@ public class SaveGameManager : MonoBehaviour
 				TilemapSerializer.Restore(layer, b.tilemap, tileDatabase);
 		}
 
+		// Destroy existing placed world objects then respawn from save
 		var existing = FindObjectsByType<SaveableEntity>(FindObjectsSortMode.None);
 		for (int i = 0; i < existing.Length; i++)
 		{
 			var e = existing[i];
-			var holder = e.GetComponent<ItemHolder>();
-			if (holder != null && holder.item != null)
+			if (e.GetComponent<ItemHolder>()?.item != null)
 				Destroy(e.gameObject);
 		}
 
@@ -178,29 +185,26 @@ public class SaveGameManager : MonoBehaviour
 			if (!string.IsNullOrEmpty(placedPrefabTag))
 				go.tag = placedPrefabTag;
 
-			var entity = go.GetComponent<SaveableEntity>();
-			if (entity == null) entity = go.AddComponent<SaveableEntity>();
-			SetPrivateId(entity, wod.uniqueId);
+			var entity = go.GetComponent<SaveableEntity>() ?? go.AddComponent<SaveableEntity>();
+			entity.SetId(wod.uniqueId);
 
-			var holder = go.GetComponent<ItemHolder>();
-			if (holder == null) holder = go.AddComponent<ItemHolder>();
+			var holder = go.GetComponent<ItemHolder>() ?? go.AddComponent<ItemHolder>();
 			holder.item = item;
 
 			var comps = go.GetComponents<ISaveableComponent>();
 			for (int c = 0; c < comps.Length; c++)
 			{
-				var comp = comps[c];
-				var csd = wod.components.Find(x => x.key == comp.SaveKey);
-				if (csd == null) continue;
-				comp.RestoreStateJson(csd.json);
+				var csd = wod.components.Find(x => x.key == comps[c].SaveKey);
+				if (csd != null) comps[c].RestoreStateJson(csd.json);
 			}
 		}
 
+		// Restore game state
 		if (player != null)
 			player.position = new Vector3(data.player.px, data.player.py, data.player.pz);
 
 		if (playerStats != null)
-			playerStats.SetState(data.playerStats.thirst, data.playerStats.hunger);
+			playerStats.SetState(data.playerStats.thirst, data.playerStats.hunger, data.playerStats.stamina);
 
 		if (weatherManager != null)
 		{
@@ -209,19 +213,12 @@ public class SaveGameManager : MonoBehaviour
 		}
 
 		if (dayNightCycle != null)
-			dayNightCycle.SetState(data.dayNight.cycleTimer, data.dayNight.dayCount, data.dayNight.isRainyDay);
+			dayNightCycle.SetState(data.dayNight.cycleTimer, data.dayNight.dayCount, data.dayNight.isRainyDay, data.dayNight.isStormyDay);
 
 		if (inventoryManager != null)
 			inventoryManager.RestoreInventoryState(data.inventory, itemDatabase);
 
-		var mapDisplay = FindAnyObjectByType<MapDisplayManager>();
-		if (mapDisplay != null)
-			mapDisplay.RestorePlayerMapState(data.playerMap);
-	}
-
-	private static void SetPrivateId(SaveableEntity entity, string id)
-	{
-		var f = typeof(SaveableEntity).GetField("uniqueId", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-		if (f != null) f.SetValue(entity, id);
+		if (mapDisplayManager != null)
+			mapDisplayManager.RestorePlayerMapState(data.playerMap);
 	}
 }
