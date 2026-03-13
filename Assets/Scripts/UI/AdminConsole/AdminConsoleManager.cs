@@ -12,6 +12,7 @@ public class AdminConsoleManager : MonoBehaviour, IGameMenu
 	[SerializeField] private GameObject root;
 	[SerializeField] private Transform contentRoot;
 	[SerializeField] private AdminConsoleItemRow rowPrefab;
+	[SerializeField] private AdminConsoleCategoryHeader headerPrefab;
 	[SerializeField] private TMP_InputField searchInput;
 
 	[Header("Data")]
@@ -21,6 +22,7 @@ public class AdminConsoleManager : MonoBehaviour, IGameMenu
 	private readonly List<Item> allItems = new List<Item>(256);
 	private readonly List<Item> filteredItems = new List<Item>(256);
 	private readonly List<AdminConsoleItemRow> rowPool = new List<AdminConsoleItemRow>(256);
+	private readonly List<AdminConsoleCategoryHeader> headerPool = new List<AdminConsoleCategoryHeader>(16);
 
 	private bool registered;
 	private bool itemsLoaded;
@@ -114,7 +116,13 @@ public class AdminConsoleManager : MonoBehaviour, IGameMenu
 				allItems.Add(loaded[i]);
 		}
 
-		allItems.Sort((a, b) => string.Compare(a != null ? a.name : "", b != null ? b.name : "", StringComparison.OrdinalIgnoreCase));
+		allItems.Sort((a, b) =>
+		{
+			if (a == null || b == null) return 0;
+			int cat = a.category.CompareTo(b.category);
+			if (cat != 0) return cat;
+			return string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase);
+		});
 		itemsLoaded = true;
 	}
 
@@ -142,33 +150,53 @@ public class AdminConsoleManager : MonoBehaviour, IGameMenu
 			}
 		}
 
-		EnsureRowPoolSize(filteredItems.Count);
-
+		// Hide all pooled objects first
 		for (int i = 0; i < rowPool.Count; i++)
-		{
-			bool active = i < filteredItems.Count;
-			var row = rowPool[i];
-			if (row == null) continue;
+			if (rowPool[i] != null) rowPool[i].gameObject.SetActive(false);
+		for (int i = 0; i < headerPool.Count; i++)
+			if (headerPool[i] != null) headerPool[i].gameObject.SetActive(false);
 
-			if (active)
+		int rowIndex = 0;
+		int headerIndex = 0;
+		ItemCategory? lastCategory = null;
+
+		for (int i = 0; i < filteredItems.Count; i++)
+		{
+			var item = filteredItems[i];
+			if (item == null) continue;
+
+			// Insert category header when category changes (skip headers when searching)
+			if (!filter && item.category != lastCategory)
 			{
-				row.gameObject.SetActive(true);
-				row.Bind(filteredItems[i], AddItemToInventory);
+				lastCategory = item.category;
+
+				if (headerPrefab != null)
+				{
+					var header = GetOrCreateHeader(headerIndex++);
+					header.SetLabel(item.category.ToString());
+					header.gameObject.SetActive(true);
+					header.transform.SetSiblingIndex(rowIndex + headerIndex - 1);
+				}
 			}
-			else
-			{
-				row.gameObject.SetActive(false);
-			}
+
+			var row = GetOrCreateRow(rowIndex++);
+			row.gameObject.SetActive(true);
+			row.Bind(item, AddItemToInventory);
 		}
 	}
 
-	private void EnsureRowPoolSize(int count)
+	private AdminConsoleItemRow GetOrCreateRow(int index)
 	{
-		while (rowPool.Count < count)
-		{
-			var row = Instantiate(rowPrefab, contentRoot);
-			rowPool.Add(row);
-		}
+		while (rowPool.Count <= index)
+			rowPool.Add(Instantiate(rowPrefab, contentRoot));
+		return rowPool[index];
+	}
+
+	private AdminConsoleCategoryHeader GetOrCreateHeader(int index)
+	{
+		while (headerPool.Count <= index)
+			headerPool.Add(Instantiate(headerPrefab, contentRoot));
+		return headerPool[index];
 	}
 
 	private void AddItemToInventory(Item item)
@@ -177,5 +205,6 @@ public class AdminConsoleManager : MonoBehaviour, IGameMenu
 		if (GameManager.Instance == null || GameManager.Instance.InventoryManager == null) return;
 
 		GameManager.Instance.InventoryManager.AddItem(item, 1, showNotifications);
+		AudioManager.instance?.PlaySound("CraftItem");
 	}
 }

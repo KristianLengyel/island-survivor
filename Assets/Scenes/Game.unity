@@ -1059,9 +1059,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.041666668
-    width: 0.25
-    height: 0.25
+    y: 0
+    width: 1
+    height: 1
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
@@ -22063,8 +22063,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39da9ae3dc9ea1544852bfbc131f7387, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  landSpeed: 20
-  waterSpeed: 20.75
+  landSpeed: 3
+  waterSpeed: 0.75
   smoothing: 0.05
   maxFillRange: 2
   fillIndicatorTilemap: {fileID: 71209571}

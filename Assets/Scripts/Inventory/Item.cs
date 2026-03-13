@@ -7,6 +7,7 @@ public class Item : ScriptableObject
 	[Header("Only gameplay")]
 	public TileBase tile;
 	public ItemType type;
+	public ItemCategory category;
 	public ActionType actionType;
 	public PlacementCondition placementCondition;
 	public Vector2Int range = new Vector2Int(5, 4);
@@ -19,6 +20,15 @@ public class Item : ScriptableObject
 
 	[Header("Prefab")]
 	public GameObject prefab;
+}
+
+public enum ItemCategory
+{
+	Tool,
+	Food,
+	Drink,
+	Material,
+	Building,
 }
 
 public enum ItemType

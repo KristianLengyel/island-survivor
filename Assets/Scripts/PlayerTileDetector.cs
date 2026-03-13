@@ -20,7 +20,7 @@ public class PlayerTileDetector : MonoBehaviour
 
 	private void Awake()
 	{
-		tileChecker = FindObjectOfType<TileChecker>();
+		tileChecker = FindAnyObjectByType<TileChecker>();
 		if (playerSpriteMask != null)
 			originalMaskPosition = playerSpriteMask.localPosition;
 

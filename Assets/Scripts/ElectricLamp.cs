@@ -27,7 +27,7 @@ public class ElectricLamp : MonoBehaviour
 	{
 		spriteRenderer = GetComponent<SpriteRenderer>();
 		lightSource = GetComponentInChildren<Light2D>();
-		dayNightCycle = FindObjectOfType<DayNightCycle>();
+		dayNightCycle = FindAnyObjectByType<DayNightCycle>();
 
 		if (spriteRenderer == null)
 		{
