@@ -107,8 +107,8 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	private readonly HashSet<int> _pendingDecorDespawn = new HashSet<int>();
 
 	// Permanently destroyed decorator tile indices (cleared on map regen)
-	private readonly HashSet<int> _felledPalmIndices = new HashSet<int>();
-	private readonly HashSet<int> _felledRockIndices = new HashSet<int>();
+	internal readonly HashSet<int> _felledPalmIndices = new HashSet<int>();
+	internal readonly HashSet<int> _felledRockIndices = new HashSet<int>();
 
 	// Separate pools so palms and rocks never mix
 	private readonly Stack<GameObject> _palmPool = new Stack<GameObject>();
