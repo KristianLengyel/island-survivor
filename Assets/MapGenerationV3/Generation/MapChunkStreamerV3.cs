@@ -730,8 +730,8 @@ public class MapChunkStreamerV3 : MonoBehaviour
 						? (palmParent != null ? palmParent : transform)
 						: (rockParent != null ? rockParent : transform);
 
-					GameObject go = GetPooled(isPalm ? _palmPool : _rockPool, prefab, parent);
-					go.transform.position = GetWorldPos(tileIdx % _d.size, tileIdx / _d.size);
+					Vector3 worldPos = GetWorldPos(tileIdx % _d.size, tileIdx / _d.size);
+					GameObject go = GetPooled(isPalm ? _palmPool : _rockPool, prefab, parent, worldPos);
 
 					// Store in the correct list — no tag needed for pool routing
 					if (isPalm) activePalms.Add(go);
@@ -822,16 +822,17 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		return new Vector3(gridOrigin.x + x + 0.5f, gridOrigin.y + y + 0.5f, 0f);
 	}
 
-	private GameObject GetPooled(Stack<GameObject> pool, GameObject prefab, Transform parent)
+	private GameObject GetPooled(Stack<GameObject> pool, GameObject prefab, Transform parent, Vector3 worldPos)
 	{
 		GameObject go;
 		if (pool.Count > 0 && (go = pool.Pop()) != null)
 		{
-			go.transform.SetParent(parent, true);
+			go.transform.SetParent(parent, false);
+			go.transform.position = worldPos;
 			go.SetActive(true);
 			return go;
 		}
-		return Instantiate(prefab, parent);
+		return Instantiate(prefab, worldPos, Quaternion.identity, parent);
 	}
 
 	private static void EnsureArray<T>(ref T[] arr, int count)
