@@ -106,6 +106,10 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	private readonly Queue<int> _decorDespawnQueue = new Queue<int>();
 	private readonly HashSet<int> _pendingDecorDespawn = new HashSet<int>();
 
+	// Permanently destroyed decorator tile indices (cleared on map regen)
+	private readonly HashSet<int> _felledPalmIndices = new HashSet<int>();
+	private readonly HashSet<int> _felledRockIndices = new HashSet<int>();
+
 	// Separate pools so palms and rocks never mix
 	private readonly Stack<GameObject> _palmPool = new Stack<GameObject>();
 	private readonly Stack<GameObject> _rockPool = new Stack<GameObject>();
@@ -196,6 +200,8 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		_purgeQueue.Clear(); _pendingPurge.Clear();
 		_decorSpawnQueue.Clear(); _pendingDecorSpawn.Clear();
 		_decorDespawnQueue.Clear(); _pendingDecorDespawn.Clear();
+		_felledPalmIndices.Clear();
+		_felledRockIndices.Clear();
 
 		int count = _w.chunks.Length;
 		_w.EnsureChunkLayerProgress(count);
@@ -719,6 +725,9 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		{
 			bool isPalm = cursor < palms.Count;
 			int tileIdx = isPalm ? palms[cursor] : rocks[cursor - palms.Count];
+			// Skip permanently felled trees/rocks
+			if (isPalm && _felledPalmIndices.Contains(tileIdx)) { cursor++; done++; continue; }
+			if (!isPalm && _felledRockIndices.Contains(tileIdx)) { cursor++; done++; continue; }
 			var bdef = _s.GetBiome((BiomeType)_d.biome[tileIdx]);
 
 			if (bdef != null)
@@ -732,6 +741,9 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 					Vector3 worldPos = GetWorldPos(tileIdx % _d.size, tileIdx / _d.size);
 					GameObject go = GetPooled(isPalm ? _palmPool : _rockPool, prefab, parent, worldPos);
+					// Register tile index so the streamer knows if this decorator is permanently destroyed
+					var rec = go.GetComponent<DecoratorRecord>() ?? go.AddComponent<DecoratorRecord>();
+					rec.streamer = this; rec.tileIndex = tileIdx; rec.isPalm = isPalm;
 
 					// Store in the correct list — no tag needed for pool routing
 					if (isPalm) activePalms.Add(go);
@@ -841,5 +853,22 @@ public class MapChunkStreamerV3 : MonoBehaviour
 			arr = new T[count];
 		else
 			System.Array.Clear(arr, 0, count);
+	}
+}
+/// <summary>
+/// Attached to every spawned decorator. Notifies the streamer when the object is
+/// permanently destroyed (e.g. tree chopped down) so the tile is never respawned.
+/// </summary>
+internal sealed class DecoratorRecord : MonoBehaviour
+{
+	internal MapChunkStreamerV3 streamer;
+	internal int tileIndex;
+	internal bool isPalm;
+
+	private void OnDestroy()
+	{
+		if (streamer == null) return;
+		if (isPalm) streamer._felledPalmIndices.Add(tileIndex);
+		else streamer._felledRockIndices.Add(tileIndex);
 	}
 }

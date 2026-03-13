@@ -1059,9 +1059,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0
-    width: 1
-    height: 1
+    y: 0.041666668
+    width: 0.25
+    height: 0.25
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
@@ -6976,9 +6976,9 @@ MonoBehaviour:
   inventoryManager: {fileID: 584944293}
   weatherManager: {fileID: 305764586}
   dayNightCycle: {fileID: 855521946}
-  playerStats: {fileID: 0}
-  mapDisplayManager: {fileID: 0}
-  mapGenerator: {fileID: 0}
+  playerStats: {fileID: 1853516654}
+  mapDisplayManager: {fileID: 855521943}
+  mapGenerator: {fileID: 1090300837}
   placedPrefabsParent: {fileID: 789890021}
   placedPrefabTag: PlaceableObject
   tilemaps:
