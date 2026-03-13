@@ -27,18 +27,17 @@ public class MapDisplayManager : MonoBehaviour
 
 	private void Start()
 	{
-		if (mapUI == null || mapRawImage == null || playerMarker == null)
-		{
-			enabled = false;
-			return;
-		}
+		TryInit();
+	}
+
+	private bool TryInit()
+	{
+		if (mapTexture != null) return true; // already initialized
+
+		if (mapUI == null || mapRawImage == null || playerMarker == null) return false;
 
 		mapManager = MapManager.Instance;
-		if (mapManager == null || (worldSize = mapManager.worldSize) <= 0)
-		{
-			enabled = false;
-			return;
-		}
+		if (mapManager == null || (worldSize = mapManager.worldSize) <= 0) return false;
 
 		visitedTiles = new bool[worldSize, worldSize];
 		mapTexture = new Texture2D(worldSize, worldSize, TextureFormat.RGBA32, false)
@@ -67,10 +66,14 @@ public class MapDisplayManager : MonoBehaviour
 		mapUI.SetActive(false);
 
 		EnsurePlayer();
+		enabled = true;
+		return true;
 	}
 
 	private void Update()
 	{
+		if (mapTexture == null && !TryInit()) return;
+
 		if (GameInput.RevealMapDown)
 		{
 			isFullMapRevealed = !isFullMapRevealed;
@@ -246,6 +249,8 @@ public class MapDisplayManager : MonoBehaviour
 	public void RestorePlayerMapState(PlayerMapData data)
 	{
 		if (data == null || data.visited == null) return;
+		if (mapTexture == null && !TryInit()) return; // retry init if MapManager is ready now
+		if (mapTexture == null) return;
 		if (data.worldSize != worldSize) return;
 
 		int bit = 0;

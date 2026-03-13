@@ -33,6 +33,9 @@ public class SaveGameManager : MonoBehaviour
 		public Tilemap tilemap;
 	}
 
+	// Tilemaps managed by the map generator — skip saving these (regenerated from seed).
+	private HashSet<Tilemap> _mapGenTilemaps;
+
 	private void Awake()
 	{
 		if (itemDatabase != null) itemDatabase.Build();
@@ -48,20 +51,32 @@ public class SaveGameManager : MonoBehaviour
 			if (go != null) placedPrefabsParent = go.transform;
 		}
 
+		BuildMapGenTilemapSet();
+
 		// Force the map generator to use the saved seed before its Start() runs,
 		// so palm trees and other decorations regenerate at the exact same positions.
 		if (GameBoot.LoadRequested && SaveIO.Exists() && mapGenerator != null)
 		{
 			var earlyData = SaveIO.Read();
 			if (earlyData != null && earlyData.mapSeed != 0)
+			{
 				mapGenerator.ForceSeed(earlyData.mapSeed);
+				Debug.Log($"[SaveGameManager] Forcing map seed: {earlyData.mapSeed}");
+			}
 		}
 	}
 
 	private IEnumerator Start()
 	{
-		// Wait one frame so all other Start() methods (DayNightCycle, WeatherManager, etc.)
-		// finish their initialization before we overwrite state with saved data.
+		// Wait for map generation to finish so tilemaps are fully painted
+		// before we restore saved state on top of them.
+		if (mapGenerator != null)
+		{
+			while (mapGenerator.IsGenerating)
+				yield return null;
+		}
+
+		// One extra frame so the streamer's OnMapRegenerated + initial CheckBoundaryCrossing runs.
 		yield return null;
 
 		if (GameBoot.LoadRequested && SaveIO.Exists())
@@ -71,10 +86,58 @@ public class SaveGameManager : MonoBehaviour
 		}
 	}
 
+	private void BuildMapGenTilemapSet()
+	{
+		_mapGenTilemaps = new HashSet<Tilemap>();
+		if (mapGenerator == null) return;
+		if (mapGenerator.waterTilemap != null) _mapGenTilemaps.Add(mapGenerator.waterTilemap);
+		if (mapGenerator.landTilemap != null) _mapGenTilemaps.Add(mapGenerator.landTilemap);
+		if (mapGenerator.grassTilemap != null) _mapGenTilemaps.Add(mapGenerator.grassTilemap);
+		if (mapGenerator.oceanOverlayTilemap != null) _mapGenTilemaps.Add(mapGenerator.oceanOverlayTilemap);
+		if (mapGenerator.oceanFloorShallowTilemap != null) _mapGenTilemaps.Add(mapGenerator.oceanFloorShallowTilemap);
+		if (mapGenerator.oceanFloorMediumTilemap != null) _mapGenTilemaps.Add(mapGenerator.oceanFloorMediumTilemap);
+		if (mapGenerator.oceanFloorDeepTilemap != null) _mapGenTilemaps.Add(mapGenerator.oceanFloorDeepTilemap);
+		// NOTE: dockTilemap intentionally excluded — it shares the same Tilemap object as
+		// buildingTilemap in the current scene setup, so it must be saved/loaded as a player tilemap.
+		// TODO: give the dock its own dedicated Tilemap in the scene and re-add it here.
+	}
+
+	private bool IsMapGenTilemap(Tilemap tm)
+	{
+		return _mapGenTilemaps != null && _mapGenTilemaps.Contains(tm);
+	}
+
 	private void Update()
 	{
 		if (GameInput.QuickSaveDown) Save();
-		if (GameInput.QuickLoadDown) Load();
+		if (GameInput.QuickLoadDown) QuickLoad();
+	}
+
+	private void QuickLoad()
+	{
+		StartCoroutine(QuickLoadCoroutine());
+	}
+
+	private IEnumerator QuickLoadCoroutine()
+	{
+		var data = SaveIO.Read();
+		if (data == null) yield break;
+
+		// If the saved seed differs from the current map, regenerate before restoring state.
+		// (Happens when a new random map was generated at scene start but the player loads a save.)
+		if (mapGenerator != null && data.mapSeed != 0 && data.mapSeed != mapGenerator.LastSeed)
+		{
+			mapGenerator.ForceSeed(data.mapSeed);
+			mapGenerator.Regenerate();
+
+			while (mapGenerator.IsGenerating)
+				yield return null;
+
+			// One extra frame so the streamer's OnMapRegenerated + CheckBoundaryCrossing runs.
+			yield return null;
+		}
+
+		Load();
 	}
 
 	public void Save()
@@ -82,7 +145,10 @@ public class SaveGameManager : MonoBehaviour
 		var data = new SaveGameData();
 
 		if (mapGenerator != null)
+		{
 			data.mapSeed = mapGenerator.LastSeed;
+			Debug.Log($"[SaveGameManager] Saved map seed: {data.mapSeed}");
+		}
 
 		if (player != null)
 		{
@@ -117,16 +183,23 @@ public class SaveGameManager : MonoBehaviour
 		if (mapDisplayManager != null)
 			data.playerMap = mapDisplayManager.CapturePlayerMapState();
 
+		// Only save player-built tilemaps (building, objects), not map-gen tilemaps
+		// (water, land, grass, ocean) — those are deterministically regenerated from the seed.
 		data.tilemaps.Clear();
 		for (int i = 0; i < tilemaps.Count; i++)
 		{
 			var b = tilemaps[i];
 			if (b == null || string.IsNullOrEmpty(b.layerId)) continue;
+			if (IsMapGenTilemap(b.tilemap)) continue;
 			data.tilemaps.Add(TilemapSerializer.Capture(b.layerId, b.tilemap));
 		}
 
 		data.worldObjects.Clear();
-		var entities = FindObjectsByType<SaveableEntity>(FindObjectsSortMode.None);
+		// Only save entities that are children of placedPrefabsParent (player-placed buildings).
+		// Map-generated objects (palm trees, rocks) are excluded — their positions come from the seed.
+		var entities = placedPrefabsParent != null
+			? placedPrefabsParent.GetComponentsInChildren<SaveableEntity>()
+			: FindObjectsByType<SaveableEntity>(FindObjectsSortMode.None);
 		for (int i = 0; i < entities.Length; i++)
 		{
 			var e = entities[i];
@@ -166,25 +239,30 @@ public class SaveGameManager : MonoBehaviour
 		var data = SaveIO.Read();
 		if (data == null) return;
 
-		// Restore tilemaps
+		// Restore only player-built tilemaps (skip map-gen tilemaps).
 		for (int i = 0; i < tilemaps.Count; i++)
 		{
 			var b = tilemaps[i];
 			if (b == null || string.IsNullOrEmpty(b.layerId)) continue;
+			if (IsMapGenTilemap(b.tilemap)) continue;
 
 			var layer = data.tilemaps.Find(x => x.layerId == b.layerId);
 			if (layer != null)
 				TilemapSerializer.Restore(layer, b.tilemap, tileDatabase);
 		}
 
-		// Destroy existing placed world objects then respawn from save
-		var existing = FindObjectsByType<SaveableEntity>(FindObjectsSortMode.None);
-		for (int i = 0; i < existing.Length; i++)
+		// Clear only player-placed objects under placedPrefabsParent.
+		// Never touch map-generated objects (palms, rocks) — those are managed by the chunk streamer.
+		if (placedPrefabsParent != null)
 		{
-			var e = existing[i];
-			if (e.GetComponent<ItemHolder>()?.item != null)
-				Destroy(e.gameObject);
+			for (int i = placedPrefabsParent.childCount - 1; i >= 0; i--)
+				Destroy(placedPrefabsParent.GetChild(i).gameObject);
 		}
+
+		// Recreate world objects but defer ISaveableComponent restoration
+		// until after inventory is restored (otherwise RestoreStateJson additions
+		// like catching net items get overwritten by RestoreInventoryState).
+		var deferredComponents = new List<(ISaveableComponent comp, string json)>();
 
 		for (int i = 0; i < data.worldObjects.Count; i++)
 		{
@@ -209,7 +287,8 @@ public class SaveGameManager : MonoBehaviour
 			for (int c = 0; c < comps.Length; c++)
 			{
 				var csd = wod.components.Find(x => x.key == comps[c].SaveKey);
-				if (csd != null) comps[c].RestoreStateJson(csd.json);
+				if (csd != null)
+					deferredComponents.Add((comps[c], csd.json));
 			}
 		}
 
@@ -234,5 +313,10 @@ public class SaveGameManager : MonoBehaviour
 
 		if (mapDisplayManager != null)
 			mapDisplayManager.RestorePlayerMapState(data.playerMap);
+
+		// Now restore ISaveableComponent state (e.g. catching net items → inventory)
+		// after inventory has been restored so additions aren't overwritten.
+		for (int i = 0; i < deferredComponents.Count; i++)
+			deferredComponents[i].comp.RestoreStateJson(deferredComponents[i].json);
 	}
 }

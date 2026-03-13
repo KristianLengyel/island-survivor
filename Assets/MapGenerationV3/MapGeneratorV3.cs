@@ -36,6 +36,7 @@ public class MapGeneratorV3 : MonoBehaviour
 	private uint _forcedSeed;
 
 	public uint LastSeed => _lastSeed;
+	public bool IsGenerating => _generating;
 
 	/// <summary>Forces the next Regenerate() call to use this seed instead of a random one. Consumed after one use.</summary>
 	public void ForceSeed(uint seed) { _forcedSeed = seed; }

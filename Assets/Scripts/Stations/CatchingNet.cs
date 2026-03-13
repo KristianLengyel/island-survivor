@@ -152,27 +152,20 @@ public class CatchingNet : MonoBehaviour, IInteractable, ISaveableComponent
 		if (string.IsNullOrEmpty(json)) return;
 
 		var state = JsonUtility.FromJson<NetState>(json);
-		if (state == null || state.caughtItemIds == null) return;
+		if (state == null || state.caughtItemIds == null || state.caughtItemIds.Count == 0) return;
 
 		var saveMgr = FindAnyObjectByType<SaveGameManager>();
 		if (saveMgr == null || saveMgr.itemDatabase == null) return;
 
-		for (int i = caughtItems.Count - 1; i >= 0; i--)
-			if (caughtItems[i] != null) Destroy(caughtItems[i]);
-		caughtItems.Clear();
+		// Caught items are transient world GameObjects (collectable prefabs) whose Item.prefab
+		// is not set. Rather than trying to re-spawn them visually, add them straight to inventory.
+		var inventory = GameManager.Instance?.InventoryManager;
+		if (inventory == null) return;
 
 		foreach (var itemId in state.caughtItemIds)
 		{
 			var item = saveMgr.itemDatabase.Get(itemId);
-			if (item == null || item.prefab == null) continue;
-
-			var go = Instantiate(item.prefab, transform);
-			go.transform.localPosition = Vector3.zero;
-			go.transform.localRotation = Quaternion.identity;
-			caughtItems.Add(go);
-
-			var clickable = go.GetComponent<ClickableObject>();
-			if (clickable != null) clickable.SetHooked(true);
+			if (item != null) inventory.AddItem(item, 1, showNotification: false);
 		}
 	}
 }

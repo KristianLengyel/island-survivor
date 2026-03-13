@@ -57,6 +57,14 @@ public sealed class MapWorkspaceV3
 	public int[] palmGrid;
 	public int[] rockGrid;
 
+	// Per-chunk decorator positions (built once after generation, read-only during streaming)
+	// chunkIndex -> list of flat tile indices where decorators should spawn
+	public List<int>[] chunkPalmIndices;
+	public List<int>[] chunkRockIndices;
+
+	// Per-chunk active GameObjects (owned by streamer, stored here for easy lookup)
+	public List<GameObject>[] chunkActiveDecorators;
+
 	public void Ensure(int size, int pad)
 	{
 		if (data != null && this.size == size && this.pad == pad) return;
@@ -99,6 +107,10 @@ public sealed class MapWorkspaceV3
 		chunks = null;
 		chunkCols = chunkRows = chunkSize = 0;
 		chunkLayerProgress = null;
+
+		chunkPalmIndices = null;
+		chunkRockIndices = null;
+		chunkActiveDecorators = null;
 	}
 
 	public void EnsureChunkLayerProgress(int chunkCount)
@@ -150,6 +162,36 @@ public sealed class MapWorkspaceV3
 		}
 		decorGridW = gw;
 		decorGridH = gh;
+	}
+
+	/// <summary>
+	/// Allocates per-chunk decorator index lists. Called once after chunks are built.
+	/// </summary>
+	public void EnsureChunkDecoratorStorage(int chunkCount)
+	{
+		if (chunkPalmIndices != null && chunkPalmIndices.Length >= chunkCount) return;
+
+		chunkPalmIndices = new List<int>[chunkCount];
+		chunkRockIndices = new List<int>[chunkCount];
+		chunkActiveDecorators = new List<GameObject>[chunkCount];
+
+		for (int i = 0; i < chunkCount; i++)
+		{
+			chunkPalmIndices[i] = new List<int>();
+			chunkRockIndices[i] = new List<int>();
+			chunkActiveDecorators[i] = new List<GameObject>();
+		}
+	}
+
+	public void ClearChunkDecoratorStorage(int chunkCount)
+	{
+		if (chunkPalmIndices == null) return;
+		for (int i = 0; i < chunkCount && i < chunkPalmIndices.Length; i++)
+		{
+			chunkPalmIndices[i]?.Clear();
+			chunkRockIndices[i]?.Clear();
+			chunkActiveDecorators[i]?.Clear();
+		}
 	}
 
 	public MapChunkV3 GetChunkForTile(int x, int y)

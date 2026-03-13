@@ -1059,9 +1059,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.041666668
-    width: 0.25
-    height: 0.25
+    y: 0
+    width: 1
+    height: 1
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
@@ -6977,6 +6977,8 @@ MonoBehaviour:
   weatherManager: {fileID: 305764586}
   dayNightCycle: {fileID: 855521946}
   playerStats: {fileID: 0}
+  mapDisplayManager: {fileID: 0}
+  mapGenerator: {fileID: 0}
   placedPrefabsParent: {fileID: 789890021}
   placedPrefabTag: PlaceableObject
   tilemaps:
@@ -13028,8 +13030,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a71a02ae5c3bfb24ba4e61ba26663217, type: 2}
   - {fileID: 11400000, guid: 6e427d67a5111964896c023fc55370c5, type: 2}
   selectedPreset: 1
-  palmParent: {fileID: 0}
-  rockParent: {fileID: 0}
 --- !u!114 &1090300838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13051,8 +13051,15 @@ MonoBehaviour:
   oceanFloorShallowTilemap: {fileID: 98216263}
   oceanFloorMediumTilemap: {fileID: 79761134}
   oceanFloorDeepTilemap: {fileID: 805110482}
-  loadRadius: 1
-  layersPerFrame: 2
+  loadRadius: 3
+  hideRadius: 7
+  purgeRadius: 14
+  purgeDelay: 30
+  loadLayersPerFrame: 7
+  purgeLayersPerFrame: 3
+  decoratorsPerFrame: 16
+  palmParent: {fileID: 0}
+  rockParent: {fileID: 0}
 --- !u!224 &1103978032 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5962571660718154296, guid: 36a8cec0099bed74a99a6f475e92a541, type: 3}
