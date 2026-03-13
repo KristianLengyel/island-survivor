@@ -231,6 +231,13 @@ public class SaveGameManager : MonoBehaviour
 			data.worldObjects.Add(wod);
 		}
 
+		var streamer = mapGenerator != null ? mapGenerator.GetComponent<MapChunkStreamerV3>() : null;
+		if (streamer != null)
+		{
+			data.felledPalmIndices.AddRange(streamer._felledPalmIndices);
+			data.felledRockIndices.AddRange(streamer._felledRockIndices);
+		}
+
 		SaveIO.Write(data);
 	}
 
@@ -238,6 +245,15 @@ public class SaveGameManager : MonoBehaviour
 	{
 		var data = SaveIO.Read();
 		if (data == null) return;
+
+		var streamer = mapGenerator != null ? mapGenerator.GetComponent<MapChunkStreamerV3>() : null;
+		if (streamer != null)
+		{
+			streamer._felledPalmIndices.Clear();
+			foreach (var idx in data.felledPalmIndices) streamer._felledPalmIndices.Add(idx);
+			streamer._felledRockIndices.Clear();
+			foreach (var idx in data.felledRockIndices) streamer._felledRockIndices.Add(idx);
+		}
 
 		// Restore only player-built tilemaps (skip map-gen tilemaps).
 		for (int i = 0; i < tilemaps.Count; i++)
