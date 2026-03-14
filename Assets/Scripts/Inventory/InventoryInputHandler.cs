@@ -28,7 +28,7 @@ public class InventoryInputHandler : MonoBehaviour
 			}
 		}
 
-		if (!inventoryManager.IsInventoryOpen())
+		if (!inventoryManager.IsInventoryOpen() && !MenuCoordinator.Instance.IsOpen("Map"))
 		{
 			int slotDown = GameInput.ToolbarSlotDown;
 			if (slotDown >= 0) inventoryManager.ChangeSelectedSlot(slotDown);

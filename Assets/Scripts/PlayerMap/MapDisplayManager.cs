@@ -222,6 +222,18 @@ public class MapDisplayManager : MonoBehaviour
 		mapTexture.Apply();
 	}
 
+	public void ResetForNewMap()
+	{
+		if (mapTexture != null)
+		{
+			Destroy(mapTexture);
+			mapTexture = null;
+		}
+		visitedTiles = null;
+		worldSize = 0;
+		isFullMapRevealed = false;
+	}
+
 	public PlayerMapData CapturePlayerMapState()
 	{
 		var data = new PlayerMapData();

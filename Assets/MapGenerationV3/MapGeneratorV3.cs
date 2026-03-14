@@ -25,6 +25,15 @@ public class MapGeneratorV3 : MonoBehaviour
 	public MapSettingsV3[] sizePresets;
 	public MapSizePreset selectedPreset = MapSizePreset._512;
 
+	[Header("Mini-Map Colors")]
+	public Color shallowOceanColor = new Color(0.27f, 0.60f, 0.85f);
+	public Color mediumOceanColor  = new Color(0.18f, 0.45f, 0.75f);
+	public Color deepOceanColor    = new Color(0.10f, 0.28f, 0.60f);
+	public Color dockColor         = new Color(0.55f, 0.38f, 0.20f);
+
+	[Header("References")]
+	public MapDisplayManager mapDisplayManager;
+
 	public MapSettingsV3 settings => (sizePresets != null && sizePresets.Length > (int)selectedPreset)
 		? sizePresets[(int)selectedPreset]
 		: null;
@@ -145,6 +154,9 @@ public class MapGeneratorV3 : MonoBehaviour
 		if (streamer != null)
 			streamer.OnMapRegenerated(_w, _w.data, settings);
 
+		PopulateMapColors(_w.data, settings);
+		mapDisplayManager?.ResetForNewMap();
+
 		var cam = FindFirstObjectByType<CameraMovement>();
 		if (cam != null)
 			cam.SetBoundsFromMapData(_w.data, waterTilemap ?? landTilemap);
@@ -248,6 +260,65 @@ public class MapGeneratorV3 : MonoBehaviour
 			int chunkIdx = _w.GetChunkIndex(x, y);
 			if (chunkIdx >= 0)
 				_w.chunkRockIndices[chunkIdx].Add(idx);
+		}
+	}
+
+	private void PopulateMapColors(MapDataV3 d, MapSettingsV3 s)
+	{
+		if (MapManager.Instance == null) return;
+
+		int size = d.size;
+		MapManager.Instance.InitializeWorld(size);
+
+		for (int y = 0; y < size; y++)
+		{
+			for (int x = 0; x < size; x++)
+			{
+				int i = d.Idx(x, y);
+				Color c;
+
+				if (d.land[i] == 1)
+				{
+					var bdef = s.GetBiome((BiomeType)d.biome[i]);
+					c = (bdef != null)
+						? (d.grass[i] == 1 ? bdef.mapGrassColor : bdef.mapLandColor)
+						: Color.green;
+				}
+				else
+				{
+					c = d.oceanBand[i] switch
+					{
+						1 => shallowOceanColor,
+						2 => mediumOceanColor,
+						_ => deepOceanColor,
+					};
+				}
+
+				MapManager.Instance.tileColors[x, y] = c;
+			}
+		}
+
+		// Paint dock over the ocean tiles at map center
+		if (s.dockTile != null)
+		{
+			int half = size / 2;
+			int halfW = s.dockWidth / 2;
+			int halfH = s.dockHeight / 2;
+			int startX = half - halfW;
+			int startY = half - halfH;
+			int dockW  = halfW * 2 + 1;
+			int dockH  = halfH * 2 + 1;
+
+			for (int dy = 0; dy < dockH; dy++)
+			{
+				for (int dx = 0; dx < dockW; dx++)
+				{
+					int tx = startX + dx;
+					int ty = startY + dy;
+					if (tx >= 0 && tx < size && ty >= 0 && ty < size)
+						MapManager.Instance.tileColors[tx, ty] = dockColor;
+				}
+			}
 		}
 	}
 

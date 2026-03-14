@@ -7125,6 +7125,7 @@ MonoBehaviour:
   root: {fileID: 1666254507}
   contentRoot: {fileID: 321521358}
   rowPrefab: {fileID: 8674554937324979177, guid: a46d42ececab8cc45a329a96e1d353a3, type: 3}
+  headerPrefab: {fileID: 0}
   searchInput: {fileID: 0}
   resourcesFolder: Items
   showNotifications: 0
@@ -12927,7 +12928,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1090300834}
   - component: {fileID: 1090300835}
-  - component: {fileID: 1090300836}
   - component: {fileID: 1090300837}
   - component: {fileID: 1090300838}
   m_Layer: 0
@@ -12980,29 +12980,6 @@ MonoBehaviour:
   palmTreeFootprint: 3
   palmTreeMinSpacing: 2
   palmTreeParent: {fileID: 0}
---- !u!114 &1090300836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1090300832}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9a7ead2b09da3408dcfedfb4d42ee2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapGeneratorControllerV2
-  waterTilemap: {fileID: 120573954}
-  landTilemap: {fileID: 739955705}
-  grassTilemap: {fileID: 853715665}
-  oceanOverlayTilemap: {fileID: 1655376837}
-  oceanFloorShallowTilemap: {fileID: 98216263}
-  oceanFloorMediumTilemap: {fileID: 79761134}
-  oceanFloorDeepTilemap: {fileID: 805110482}
-  startPlatformTilemap: {fileID: 943186139}
-  settings: {fileID: 11400000, guid: f7b2f45db636e764c810f7ee6f96e5be, type: 2}
-  palmTreePrefab: {fileID: 317052735598574385, guid: 6be713a4963e37f4488324a01f18ad2a, type: 3}
-  palmTreeParent: {fileID: 0}
 --- !u!114 &1090300837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13030,6 +13007,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a71a02ae5c3bfb24ba4e61ba26663217, type: 2}
   - {fileID: 11400000, guid: 6e427d67a5111964896c023fc55370c5, type: 2}
   selectedPreset: 1
+  shallowOceanColor: {r: 0.27, g: 0.6, b: 0.85, a: 1}
+  mediumOceanColor: {r: 0.18, g: 0.45, b: 0.75, a: 1}
+  deepOceanColor: {r: 0.1, g: 0.28, b: 0.6, a: 1}
+  dockColor: {r: 0.55, g: 0.38, b: 0.2, a: 1}
+  mapDisplayManager: {fileID: 855521943}
 --- !u!114 &1090300838
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -86,7 +86,8 @@ public class PlayerController : MonoBehaviour
 
 		bool inventoryBlocked = inventoryManager != null && inventoryManager.IsInventoryOpen();
 		bool busyBlocked = carryController != null && carryController.IsBusy;
-		bool blocked = inventoryBlocked || busyBlocked;
+		bool mapBlocked = MenuCoordinator.Instance != null && MenuCoordinator.Instance.IsOpen("Map");
+		bool blocked = inventoryBlocked || busyBlocked || mapBlocked;
 
 		if (blocked)
 		{

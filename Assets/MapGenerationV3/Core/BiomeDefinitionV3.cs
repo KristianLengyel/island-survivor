@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 /// <summary>
-/// ScriptableObject for a single biome. Add new biomes by creating new assets —
+/// ScriptableObject for a single biome. Add new biomes by creating new assets ï¿½
 /// no code changes required in the generation pipeline.
 /// </summary>
 [CreateAssetMenu(fileName = "BiomeDef_Tropical", menuName = "MapGenV3/BiomeDefinition")]
@@ -35,4 +35,8 @@ public class BiomeDefinitionV3 : ScriptableObject
 	[Header("Colors (optional tinting)")]
 	public Color landColor = Color.white;
 	public Color grassColor = Color.white;
+
+	[Header("Mini-Map Colors")]
+	public Color mapLandColor  = new Color(0.85f, 0.78f, 0.50f); // sand-ish default
+	public Color mapGrassColor = new Color(0.27f, 0.60f, 0.25f); // green default
 }
