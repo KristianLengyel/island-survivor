@@ -267,6 +267,8 @@ public class SaveGameManager : MonoBehaviour
 				TilemapSerializer.Restore(layer, b.tilemap, tileDatabase);
 		}
 
+		GameManager.Instance.BuildingManager.RunFloodFill();
+
 		// Clear only player-placed objects under placedPrefabsParent.
 		// Never touch map-generated objects (palms, rocks) — those are managed by the chunk streamer.
 		if (placedPrefabsParent != null)

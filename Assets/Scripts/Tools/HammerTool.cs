@@ -5,6 +5,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 {
 	[Header("Tilemaps")]
 	public Tilemap buildingTilemap;
+	public Tilemap wallTilemap;
 	public Tilemap tempTilemap;
 	public Tilemap progressTilemap;
 	public Tilemap waterTilemap;
@@ -133,9 +134,16 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 			TileBase tileToPlace = buildingManager.GetSelectedTile();
 			if (tileToPlace != null && buildingManager.HasEnoughResources(tileToPlace))
 			{
-				if (buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos))
+				TileCategory cat = buildingManager.GetTileCategory(tileToPlace);
+				bool canPlace;
+				if (cat == TileCategory.Floor)
+					canPlace = buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos);
+				else
+					canPlace = buildingTilemap.GetTile(gridPos) != null && wallTilemap.GetTile(gridPos) == null;
+
+				if (canPlace)
 				{
-					PlaceTile(gridPos, tileToPlace);
+					PlaceTile(gridPos, tileToPlace, cat);
 					buildingManager.UseResources(tileToPlace);
 					canPlaceTile = false;
 				}
@@ -199,20 +207,32 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		overlapFilter.useDepth = false;
 	}
 
-	private void PlaceTile(Vector3Int gridPos, TileBase tileToPlace)
+	private void PlaceTile(Vector3Int gridPos, TileBase tileToPlace, TileCategory cat)
 	{
-		buildingTilemap.SetTile(gridPos, tileToPlace);
-		GameManager.Instance.AudioManager.PlaySound("PlaceSound");
-
-		Vector3Int below = new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z);
-		if (waterTilemap.GetTile(below) == waterTile)
+		if (cat == TileCategory.Floor)
 		{
-			TileBase pillarTile = GameManager.Instance.BuildingManager.GetPillarTileForFloor(tileToPlace);
-			if (pillarTile != null)
+			buildingTilemap.SetTile(gridPos, tileToPlace);
+
+			Vector3Int below = new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z);
+			if (waterTilemap.GetTile(below) == waterTile)
 			{
-				betweenOceanFloorWaterTilemap.SetTile(below, pillarTile);
+				TileBase pillarTile = GameManager.Instance.BuildingManager.GetPillarTileForFloor(tileToPlace);
+				if (pillarTile != null)
+				{
+					betweenOceanFloorWaterTilemap.SetTile(below, pillarTile);
+				}
 			}
 		}
+		else
+		{
+			TileBase resolved = (cat == TileCategory.Door)
+				? GameManager.Instance.BuildingManager.ResolveDoorTile(tileToPlace, gridPos)
+				: tileToPlace;
+			wallTilemap.SetTile(gridPos, resolved);
+		}
+
+		GameManager.Instance.BuildingManager.RunFloodFill();
+		GameManager.Instance.AudioManager.PlaySound("PlaceSound");
 	}
 
 	private bool TryRemovePlaceableObject(Vector3Int gridPos)
@@ -260,24 +280,40 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		var inventoryManager = GameManager.Instance.InventoryManager;
 		var buildingManager = GameManager.Instance.BuildingManager;
 
-		TileBase tile = buildingTilemap.GetTile(gridPos);
-		if (tile != null)
+		TileBase wallTile = wallTilemap.GetTile(gridPos);
+		if (wallTile != null)
+		{
+			wallTilemap.SetTile(gridPos, null);
+			buildingManager.RunFloodFill();
+			GameManager.Instance.AudioManager.PlaySound("PlaceSound");
+
+			var returnedFromWall = buildingManager.GetResourcesReturnedOnDestroy(wallTile);
+			if (returnedFromWall != null)
+			{
+				inventoryManager.AddResources(returnedFromWall);
+			}
+			return;
+		}
+
+		TileBase floorTile = buildingTilemap.GetTile(gridPos);
+		if (floorTile != null)
 		{
 			buildingTilemap.SetTile(gridPos, null);
+			buildingManager.RunFloodFill();
 			GameManager.Instance.AudioManager.PlaySound("PlaceSound");
 
 			Vector3Int below = new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z);
 			TileBase currentPillar = betweenOceanFloorWaterTilemap.GetTile(below);
-			TileBase expectedPillar = buildingManager.GetPillarTileForFloor(tile);
+			TileBase expectedPillar = buildingManager.GetPillarTileForFloor(floorTile);
 			if (currentPillar != null && currentPillar == expectedPillar)
 			{
 				betweenOceanFloorWaterTilemap.SetTile(below, null);
 			}
 
-			var returnedResources = buildingManager.GetResourcesReturnedOnDestroy(tile);
-			if (returnedResources != null)
+			var returnedFromFloor = buildingManager.GetResourcesReturnedOnDestroy(floorTile);
+			if (returnedFromFloor != null)
 			{
-				inventoryManager.AddResources(returnedResources);
+				inventoryManager.AddResources(returnedFromFloor);
 			}
 		}
 	}
@@ -299,7 +335,9 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 
 	private bool CanRemoveAtPosition(Vector3Int gridPos)
 	{
-		return buildingTilemap.GetTile(gridPos) != null || IsPlaceableObjectAt(gridPos);
+		return buildingTilemap.GetTile(gridPos) != null
+			|| wallTilemap.GetTile(gridPos) != null
+			|| IsPlaceableObjectAt(gridPos);
 	}
 
 	private void ShowIndicator(Vector3Int gridPos)

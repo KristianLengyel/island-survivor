@@ -33,6 +33,9 @@ public class PlayerController : MonoBehaviour
 	private PlayerItemUseController itemUseController;
 	private PlayerCarryController carryController;
 
+	public bool isIndoors;
+	public static event System.Action<bool> OnIndoorStateChanged;
+
 	private void Awake()
 	{
 		rb = GetComponent<Rigidbody2D>();
@@ -82,6 +85,8 @@ public class PlayerController : MonoBehaviour
 
 	private void Update()
 	{
+		CheckIndoorState();
+
 		var inventoryManager = GameManager.Instance.InventoryManager;
 
 		bool inventoryBlocked = inventoryManager != null && inventoryManager.IsInventoryOpen();
@@ -114,6 +119,20 @@ public class PlayerController : MonoBehaviour
 		{
 			carryController.TryPutDown();
 		}
+	}
+
+	private void CheckIndoorState()
+	{
+		var bm = GameManager.Instance != null ? GameManager.Instance.BuildingManager : null;
+		if (bm == null) return;
+
+		bool nowIndoors = bm.IsIndoors(transform.position);
+		if (nowIndoors == isIndoors) return;
+
+		isIndoors = nowIndoors;
+		OnIndoorStateChanged?.Invoke(isIndoors);
+		AudioManager.instance.SetIndoorMuffling(isIndoors);
+		if (weatherManager != null) weatherManager.SetPlayerIndoors(isIndoors);
 	}
 
 	private void FixedUpdate()

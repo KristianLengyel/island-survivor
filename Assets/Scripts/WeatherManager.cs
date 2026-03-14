@@ -16,6 +16,8 @@ public class WeatherManager : MonoBehaviour
 	[SerializeField] private bool rainActive;
 	[SerializeField] private bool fogActive;
 
+	private bool playerIndoors;
+
 	private const string ColliderPosParam = "ColliderPos";
 
 	private void Start()
@@ -73,6 +75,12 @@ public class WeatherManager : MonoBehaviour
 		UpdateWeatherState();
 	}
 
+	public void SetPlayerIndoors(bool indoors)
+	{
+		playerIndoors = indoors;
+		UpdateWeatherState();
+	}
+
 	public void UpdateWeatherState()
 	{
 		UpdateRainEmission();
@@ -93,7 +101,7 @@ public class WeatherManager : MonoBehaviour
 		if (rainParticleSystem != null)
 		{
 			var emission = rainParticleSystem.emission;
-			emission.rateOverTime = rainActive ? rainEmissionRate : 0f;
+			emission.rateOverTime = (rainActive && !playerIndoors) ? rainEmissionRate : 0f;
 		}
 	}
 
@@ -101,7 +109,7 @@ public class WeatherManager : MonoBehaviour
 	{
 		if (fogEffect != null)
 		{
-			fogEffect.gameObject.SetActive(fogActive);
+			fogEffect.gameObject.SetActive(fogActive && !playerIndoors);
 		}
 	}
 
@@ -113,5 +121,4 @@ public class WeatherManager : MonoBehaviour
 
 	public bool IsRainActive() => rainActive;
 	public bool IsFogActive() => fogActive;
-
 }

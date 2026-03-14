@@ -26,9 +26,13 @@ public class AudioManager : MonoBehaviour
 	public Sound[] sounds;
 	private Dictionary<string, Sound> soundDictionary;
 	private Coroutine fadeCoroutine;
+	private Coroutine indoorFadeCoroutine;
 
 	private AudioSource ambientSource;
 	public AudioSource effectsSource;
+
+	private float baseAmbientVolume = 1f;
+	private float indoorVolumeMult = 1f;
 
 	private void Awake()
 	{
@@ -88,15 +92,18 @@ public class AudioManager : MonoBehaviour
 					return;
 				}
 
+				baseAmbientVolume = sound.volume;
+				float targetVolume = sound.volume * indoorVolumeMult;
+
 				ambientSource.clip = sound.clip;
-				ambientSource.volume = sound.useFadeIn ? 0f : sound.volume;
+				ambientSource.volume = sound.useFadeIn ? 0f : targetVolume;
 				ambientSource.pitch = pitchToUse;
 				ambientSource.loop = true;
 				ambientSource.Play();
 
 				if (sound.useFadeIn)
 				{
-					StartFade(true, sound.volume, sound.fadeDuration);
+					StartFade(true, targetVolume, sound.fadeDuration);
 				}
 			}
 			else
@@ -132,6 +139,34 @@ public class AudioManager : MonoBehaviour
 		{
 			Debug.LogWarning($"Sound {name} not found!");
 		}
+	}
+
+	public void SetIndoorMuffling(bool indoors)
+	{
+		indoorVolumeMult = indoors ? 0.2f : 1f;
+		float target = baseAmbientVolume * indoorVolumeMult;
+		float duration = indoors ? 1f : 0.5f;
+
+		if (indoorFadeCoroutine != null)
+			StopCoroutine(indoorFadeCoroutine);
+
+		indoorFadeCoroutine = StartCoroutine(FadeIndoorVolume(target, duration));
+	}
+
+	private IEnumerator FadeIndoorVolume(float targetVolume, float duration)
+	{
+		float startVolume = ambientSource.volume;
+		float timeElapsed = 0f;
+
+		while (timeElapsed < duration)
+		{
+			ambientSource.volume = Mathf.Lerp(startVolume, targetVolume, timeElapsed / duration);
+			timeElapsed += Time.deltaTime;
+			yield return null;
+		}
+
+		ambientSource.volume = targetVolume;
+		indoorFadeCoroutine = null;
 	}
 
 	private void StartFade(bool fadeIn, float targetVolume, float duration)
