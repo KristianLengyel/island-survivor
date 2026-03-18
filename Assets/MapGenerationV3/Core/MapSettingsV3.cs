@@ -89,6 +89,10 @@ public class MapSettingsV3 : ScriptableObject
 	[Min(1)] public int shelfDistanceTiles = 10;
 	[Range(0f, 1f)] public float shelfStrength = 0.7f;
 
+	[Header("Abyss Patches")]
+	public float abyssNoiseScale = 18f;
+	[Range(0f, 1f)] public float abyssThreshold = 0.72f;
+
 	// -------------------------------------------------------
 	// DECORATORS
 	// -------------------------------------------------------
@@ -96,12 +100,8 @@ public class MapSettingsV3 : ScriptableObject
 	public float seaweedScale = 20f;
 	[Range(0f, 1f)] public float seaweedThreshold = 0.62f;
 	[Min(0)] public int seaweedMinDepth = 2;
-
-	[Header("Rocks")]
-	[Range(0f, 1f)] public float rockSpawnChance = 0.3f;
-	[Min(1)] public int rockMinDistance = 3;
-	[Min(0)] public int rockCoastMin = 1;
-	[Min(0)] public int rockCoastMax = 4;
+	public float seaweedJitterScale = 3f;
+	[Range(0f, 0.3f)] public float seaweedEdgeJitter = 0.15f;
 
 	// -------------------------------------------------------
 	// CENTER DOCK
@@ -110,6 +110,7 @@ public class MapSettingsV3 : ScriptableObject
 	[Min(1)] public int dockWidth = 2;
 	[Min(1)] public int dockHeight = 2;
 	public TileBase dockTile;
+	public TileBase pillarTile;
 
 	// -------------------------------------------------------
 	// GLOBAL TILES  (ocean — shared across biomes)
@@ -119,6 +120,7 @@ public class MapSettingsV3 : ScriptableObject
 	public TileBase oceanFloorShallowTile;
 	public TileBase oceanFloorMediumTile;
 	public TileBase oceanFloorDeepTile;
+	public TileBase oceanFloorAbyssTile;
 	public TileBase seaweedTile;
 
 	// -------------------------------------------------------

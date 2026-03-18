@@ -233,10 +233,7 @@ public class SaveGameManager : MonoBehaviour
 
 		var streamer = mapGenerator != null ? mapGenerator.GetComponent<MapChunkStreamerV3>() : null;
 		if (streamer != null)
-		{
-			data.felledPalmIndices.AddRange(streamer._felledPalmIndices);
-			data.felledRockIndices.AddRange(streamer._felledRockIndices);
-		}
+			data.felledDecoratorIndices.AddRange(streamer._felledDecoratorIndices);
 
 		SaveIO.Write(data);
 	}
@@ -249,10 +246,10 @@ public class SaveGameManager : MonoBehaviour
 		var streamer = mapGenerator != null ? mapGenerator.GetComponent<MapChunkStreamerV3>() : null;
 		if (streamer != null)
 		{
-			streamer._felledPalmIndices.Clear();
-			foreach (var idx in data.felledPalmIndices) streamer._felledPalmIndices.Add(idx);
-			streamer._felledRockIndices.Clear();
-			foreach (var idx in data.felledRockIndices) streamer._felledRockIndices.Add(idx);
+			streamer._felledDecoratorIndices.Clear();
+			foreach (var idx in data.felledDecoratorIndices) streamer._felledDecoratorIndices.Add(idx);
+			foreach (var idx in data.felledPalmIndices) streamer._felledDecoratorIndices.Add(idx);
+			foreach (var idx in data.felledRockIndices) streamer._felledDecoratorIndices.Add(idx);
 		}
 
 		// Restore only player-built tilemaps (skip map-gen tilemaps).

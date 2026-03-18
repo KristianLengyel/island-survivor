@@ -19,6 +19,7 @@ public class SaveGameData
 	public List<TilemapLayerData> tilemaps = new List<TilemapLayerData>();
 	public List<WorldObjectData> worldObjects = new List<WorldObjectData>();
 
+	public List<int> felledDecoratorIndices = new List<int>();
 	public List<int> felledPalmIndices = new List<int>();
 	public List<int> felledRockIndices = new List<int>();
 }

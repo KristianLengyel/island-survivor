@@ -15,6 +15,7 @@ MonoBehaviour:
   tile: {fileID: 11400000, guid: 59198098aaf015644b9f63d580682586, type: 2}
   altTile: {fileID: 11400000, guid: 9e9f15da5f60abb448bcbe6f8e0cf63e, type: 2}
   pillarTile: {fileID: 0}
+  menuIcon: {fileID: 3001974009188523943, guid: a0410356c56d40d44a87aa71e508869f, type: 3}
   tileCategory: 2
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}

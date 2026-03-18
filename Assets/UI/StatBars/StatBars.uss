@@ -1,0 +1,57 @@
+.statBarsRoot {
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.statBarFrame {
+    width: 68px;
+    height: 28px;
+    background-image: resource("UI/Sprites/ui_background_nofill");
+    -unity-slice-left: 5;
+    -unity-slice-right: 5;
+    -unity-slice-top: 5;
+    -unity-slice-bottom: 5;
+    -unity-slice-scale: 1px;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    flex-shrink: 0;
+}
+
+.hungerFrame {
+    margin-bottom: 8px;
+}
+
+.statBarTrack {
+    width: 60px;
+    height: 20px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.hungerTrack {
+    background-color: rgba(220, 180, 60, 0.28);
+}
+
+.thirstTrack {
+    background-color: rgba(60, 140, 220, 0.28);
+}
+
+.statBarFill {
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.hungerFill {
+    width: 60px;
+    background-color: rgba(220, 180, 60, 0.90);
+}
+
+.thirstFill {
+    width: 60px;
+    background-color: rgba(60, 140, 220, 0.90);
+}

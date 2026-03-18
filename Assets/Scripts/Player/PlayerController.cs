@@ -163,6 +163,16 @@ public class PlayerController : MonoBehaviour
 		movementMotor.ClearHookTransform(tool);
 	}
 
+	public void SetFacingDirection(Vector2 dir)
+	{
+		animationDriver.SetFacingDirection(dir);
+	}
+
+	public void ClearFacingDirection()
+	{
+		animationDriver.ClearFacingDirection();
+	}
+
 	public void PlayStepSound()
 	{
 		if (!playerTileDetector) return;

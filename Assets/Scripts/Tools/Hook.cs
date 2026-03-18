@@ -93,6 +93,9 @@ public class Hook : MonoBehaviour, IPlayerTool
 				isHolding = true;
 				holdTime = 0f;
 				instantiatedIndicator = Instantiate(throwIndicator, player.position, Quaternion.identity);
+				Vector3 toMouse = (GetMouseWorldPosition() - player.position);
+				if (toMouse.sqrMagnitude > 0.001f)
+					playerController.SetFacingDirection(toMouse.normalized);
 			}
 
 			if (GameInput.LmbHeld && isHolding)
@@ -101,6 +104,8 @@ public class Hook : MonoBehaviour, IPlayerTool
 				holdTime = Mathf.Clamp(holdTime, 0, maxHoldTime);
 
 				throwDirection = (GetMouseWorldPosition() - player.position).normalized;
+				playerController.SetFacingDirection(throwDirection);
+
 				float indicatorDistance = Mathf.Lerp(0, maxRange, holdTime / maxHoldTime);
 				if (instantiatedIndicator != null)
 				{
@@ -143,6 +148,7 @@ public class Hook : MonoBehaviour, IPlayerTool
 					lineRenderer.enabled = false;
 					isHookThrown = false;
 					playerController.ClearHookTransform(this);
+					playerController.ClearFacingDirection();
 				}
 
 				if (distanceToPlayer <= collectDistance)
@@ -168,6 +174,7 @@ public class Hook : MonoBehaviour, IPlayerTool
 				lineRenderer.enabled = false;
 				isHookThrown = false;
 				playerController.ClearHookTransform(this);
+				playerController.ClearFacingDirection();
 			}
 		}
 
@@ -196,7 +203,11 @@ public class Hook : MonoBehaviour, IPlayerTool
 		isPullingDisabled = false;
 		holdTime = 0f;
 
-		if (playerController != null) playerController.ClearHookTransform(this);
+		if (playerController != null)
+		{
+			playerController.ClearHookTransform(this);
+			playerController.ClearFacingDirection();
+		}
 	}
 
 	private void DestroyPreviousHook()

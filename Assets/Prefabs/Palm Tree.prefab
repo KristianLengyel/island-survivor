@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 317052735598574385}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.4, y: -0.27, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -49,7 +49,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dae6112f6a0637740a6f9482cd0b113c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PalmTree
-  interactionRange: 1
+  interactionRange: 2
   outlineRenderer: {fileID: 6158221177570451104}
   hitSpriteRenderer: {fileID: 3121872112297365005}
   requiredTool: {fileID: 11400000, guid: d81b0d085d7f1a24fb72a90e96af294b, type: 2}
@@ -99,8 +99,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.120000005, y: -0.8440836}
-  m_Radius: 0.1843862
+  m_Offset: {x: -0.120000005, y: -0.7729739}
+  m_Radius: 0.2554959
 --- !u!1 &3279618370604507833
 GameObject:
   m_ObjectHideFlags: 0

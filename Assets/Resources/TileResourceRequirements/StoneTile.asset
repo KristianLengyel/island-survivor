@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: StoneTile
   m_EditorClassIdentifier: 
   tile: {fileID: 11400000, guid: f000c49e801ac1b43a2e274f1ea8cb2a, type: 2}
+  altTile: {fileID: 0}
   pillarTile: {fileID: 11400000, guid: d05528465249c4c48b0d8b97b545e449, type: 2}
+  menuIcon: {fileID: 1104211962, guid: d32c14b04fc638c42823fa6383e4f27c, type: 3}
+  tileCategory: 0
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 7aa9d5da1859d6140add1a79b3703d8d, type: 2}
     amount: 1

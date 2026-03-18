@@ -10,6 +10,7 @@ public class TileResourceRequirement : ScriptableObject
 	public TileBase tile;
 	public TileBase altTile;
 	public TileBase pillarTile;
+	public Sprite menuIcon;
 	public TileCategory tileCategory = TileCategory.Floor;
 	public List<ResourceRequirement> resourceRequirements;
 	public List<ResourceRequirement> resourcesReturnedOnDestroy;

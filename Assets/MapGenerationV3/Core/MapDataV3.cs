@@ -1,7 +1,3 @@
-/// <summary>
-/// All map data as flat arrays indexed by [y * size + x].
-/// Single source of truth passed between every generation stage.
-/// </summary>
 public sealed class MapDataV3
 {
 	public readonly int size;
@@ -9,8 +5,8 @@ public sealed class MapDataV3
 	public readonly int waterSize;
 
 	// Height & Land
-	public readonly float[] height;     // [0..1] raw noise
-	public readonly byte[] land;       // 1 = land, 0 = water
+	public readonly float[] height;
+	public readonly byte[] land;
 
 	// Signed BFS coast distance
 	// Positive = inland tiles from coast, Negative = ocean tiles from coast, 0 = coast edge
@@ -20,16 +16,15 @@ public sealed class MapDataV3
 	public readonly byte[] biome;
 
 	// Land bands
-	public readonly byte[] beach;       // 1 = beach strip
-	public readonly byte[] grass;       // 1 = grass interior
+	public readonly byte[] beach;
+	public readonly byte[] grass;
 
-	// Ocean bands: 1 = shallow, 2 = medium, 3 = deep
+	// Ocean bands: 1 = shallow, 2 = medium, 3 = deep, 4 = abyss
 	public readonly byte[] oceanBand;
 
 	// Decorators
 	public readonly byte[] seaweed;
-	public readonly byte[] palmTile;    // spawn candidate
-	public readonly byte[] rockTile;    // spawn candidate
+	public readonly byte[] decoratorSlot; // 0 = none, 1..N = entry index+1 within biome's decorators[]
 
 	// Which island seed owns this tile (-1 = ocean/unowned)
 	public readonly int[] islandId;
@@ -49,8 +44,7 @@ public sealed class MapDataV3
 		grass = new byte[n];
 		oceanBand = new byte[n];
 		seaweed = new byte[n];
-		palmTile = new byte[n];
-		rockTile = new byte[n];
+		decoratorSlot = new byte[n];
 		islandId = new int[n];
 	}
 

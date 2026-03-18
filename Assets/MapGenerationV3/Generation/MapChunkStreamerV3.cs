@@ -1,25 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-/// <summary>
-/// Streams chunks around the player using a two-stage visibility system:
-///
-///   STAGE 1 — COLOR HIDE/SHOW  (zero tilemap mesh rebuilds)
-///     Chunks just outside loadRadius are hidden by setting tile colors to Color.clear.
-///     Showing them again is just setting colors back to Color.white.
-///     This covers 95% of all load/unload events during normal movement with no FPS cost.
-///
-///   STAGE 2 — HARD PURGE  (actual SetTilesBlock null, runs on a slow timer)
-///     Chunks beyond purgeRadius are truly cleared from the tilemap after purgeDelay seconds.
-///     This bounds memory usage on large worlds without affecting frame time during movement.
-///     When the player returns, the chunk reloads normally.
-///
-///   DECORATORS follow chunk visibility:
-///     Hidden chunks despawn their GameObjects (returned to pool).
-///     Shown/loaded chunks spawn them incrementally per frame.
-/// </summary>
 public class MapChunkStreamerV3 : MonoBehaviour
 {
 	// -------------------------------------------------------
@@ -38,6 +21,7 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	public Tilemap oceanFloorShallowTilemap;
 	public Tilemap oceanFloorMediumTilemap;
 	public Tilemap oceanFloorDeepTilemap;
+	public Tilemap oceanFloorAbyssTilemap;
 
 	[Header("Streaming Radii")]
 	[Tooltip("Chunks within this radius are fully visible and have active decorators.")]
@@ -59,14 +43,15 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	[Tooltip("Hard-purge tile layers cleared per frame (runs only during idle, far from player).")]
 	[Range(1, 20)] public int purgeLayersPerFrame = 3;
 
+	[Tooltip("Chunks whose tile colors are updated per frame during show/hide transitions.")]
+	[Range(1, 20)] public int showHideChunksPerFrame = 4;
+
 	[Tooltip("Decorator GameObjects spawned or despawned per frame.")]
 	[Range(1, 64)] public int decoratorsPerFrame = 16;
 
-	[Header("Decorator Parents")]
+	[Header("Decorator Parent")]
 	[Tooltip("Must NOT be a child of tilemapGrid.")]
-	public Transform palmParent;
-	[Tooltip("Must NOT be a child of tilemapGrid.")]
-	public Transform rockParent;
+	public Transform decoratorParent;
 
 	// -------------------------------------------------------
 	// Chunk state enum
@@ -74,11 +59,11 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 	private enum ChunkVisibility : byte
 	{
-		Unloaded = 0,   // tiles not in tilemap, no decorators
-		Loading = 1,   // being painted layer by layer
-		Visible = 2,   // fully painted, Color.white, decorators active
-		Hidden = 3,   // tiles present but Color.clear, no decorators
-		Purging = 4,   // being hard-cleared layer by layer
+		Unloaded = 0,
+		Loading = 1,
+		Visible = 2,
+		Hidden = 3,
+		Purging = 4,
 	}
 
 	// -------------------------------------------------------
@@ -101,22 +86,23 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	private readonly HashSet<int> _pendingLoad = new HashSet<int>();
 	private readonly Queue<int> _purgeQueue = new Queue<int>();
 	private readonly HashSet<int> _pendingPurge = new HashSet<int>();
+	private readonly Queue<int> _alphaQueue = new Queue<int>();
+	private readonly HashSet<int> _pendingAlpha = new HashSet<int>();
+	private float[] _chunkTargetAlpha;
 	private readonly Queue<int> _decorSpawnQueue = new Queue<int>();
 	private readonly HashSet<int> _pendingDecorSpawn = new HashSet<int>();
 	private readonly Queue<int> _decorDespawnQueue = new Queue<int>();
 	private readonly HashSet<int> _pendingDecorDespawn = new HashSet<int>();
 
 	// Permanently destroyed decorator tile indices (cleared on map regen)
-	internal readonly HashSet<int> _felledPalmIndices = new HashSet<int>();
-	internal readonly HashSet<int> _felledRockIndices = new HashSet<int>();
+	internal readonly HashSet<int> _felledDecoratorIndices = new HashSet<int>();
 
-	// Separate pools so palms and rocks never mix
-	private readonly Stack<GameObject> _palmPool = new Stack<GameObject>();
-	private readonly Stack<GameObject> _rockPool = new Stack<GameObject>();
+	// Pool keyed by prefab asset reference — each unique prefab has its own stack
+	private readonly Dictionary<GameObject, Stack<GameObject>> _decoratorPools
+		= new Dictionary<GameObject, Stack<GameObject>>();
 
-	// Per-chunk active palm/rock lists — tracked separately so we never need CompareTag
-	private List<GameObject>[] _chunkActivePalms;
-	private List<GameObject>[] _chunkActiveRocks;
+	// Per-chunk active decorator lists
+	private List<GameObject>[] _chunkActiveDecorators;
 
 	private Coroutine _streamCoroutine;
 	private Coroutine _purgeTimerCoroutine;
@@ -159,6 +145,7 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		oceanFloorShallowTilemap?.ClearAllTiles();
 		oceanFloorMediumTilemap?.ClearAllTiles();
 		oceanFloorDeepTilemap?.ClearAllTiles();
+		oceanFloorAbyssTilemap?.ClearAllTiles();
 
 		for (int i = 0; i < _w.chunks.Length; i++)
 		{
@@ -198,10 +185,10 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 		_loadQueue.Clear(); _pendingLoad.Clear();
 		_purgeQueue.Clear(); _pendingPurge.Clear();
+		_alphaQueue.Clear(); _pendingAlpha.Clear();
 		_decorSpawnQueue.Clear(); _pendingDecorSpawn.Clear();
 		_decorDespawnQueue.Clear(); _pendingDecorDespawn.Clear();
-		_felledPalmIndices.Clear();
-		_felledRockIndices.Clear();
+		_felledDecoratorIndices.Clear();
 
 		int count = _w.chunks.Length;
 		_w.EnsureChunkLayerProgress(count);
@@ -210,17 +197,15 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		EnsureArray(ref _chunkHiddenSince, count);
 		EnsureArray(ref _chunkOpProgress, count);
 		EnsureArray(ref _chunkDecorCursor, count);
+		EnsureArray(ref _chunkTargetAlpha, count);
 
-		// Ensure per-chunk palm/rock active lists
-		if (_chunkActivePalms == null || _chunkActivePalms.Length < count)
+		if (_chunkActiveDecorators == null || _chunkActiveDecorators.Length < count)
 		{
-			_chunkActivePalms = new List<GameObject>[count];
-			_chunkActiveRocks = new List<GameObject>[count];
+			_chunkActiveDecorators = new List<GameObject>[count];
 		}
 		for (int i = 0; i < count; i++)
 		{
-			if (_chunkActivePalms[i] == null) _chunkActivePalms[i] = new List<GameObject>();
-			if (_chunkActiveRocks[i] == null) _chunkActiveRocks[i] = new List<GameObject>();
+			if (_chunkActiveDecorators[i] == null) _chunkActiveDecorators[i] = new List<GameObject>();
 		}
 
 		for (int i = 0; i < count; i++)
@@ -271,10 +256,6 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		UpdateChunkVisibilityStates(origin.x, origin.y);
 	}
 
-	/// <summary>
-	/// Classifies every chunk by distance and issues the appropriate command.
-	/// Show/hide are instant (color only). Load/purge are queued.
-	/// </summary>
 	private void UpdateChunkVisibilityStates(int pcx, int pcy)
 	{
 		int count = _w.chunks.Length;
@@ -289,7 +270,6 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 			if (dist <= loadRadius)
 			{
-				// Must be Visible
 				CancelPurge(i);
 				switch (vis)
 				{
@@ -298,29 +278,24 @@ public class MapChunkStreamerV3 : MonoBehaviour
 						EnqueueLoad(i);
 						break;
 					case ChunkVisibility.Hidden:
-						ShowChunk(i);          // free: color only
+						ShowChunk(i);
 						break;
-						// Loading / Visible: nothing to do
 				}
 			}
 			else if (dist <= hideRadius)
 			{
-				// Should be Hidden — tiles stay, just invisible
 				CancelPurge(i);
 				switch (vis)
 				{
 					case ChunkVisibility.Visible:
-						HideChunk(i);          // free: color only
+						HideChunk(i);
 						break;
 					case ChunkVisibility.Loading:
-						// Let it finish — will be hidden on next boundary check
 						break;
-						// Unloaded / Hidden: nothing to do
 				}
 			}
 			else
 			{
-				// Beyond hide radius
 				switch (vis)
 				{
 					case ChunkVisibility.Visible:
@@ -329,8 +304,6 @@ public class MapChunkStreamerV3 : MonoBehaviour
 					case ChunkVisibility.Loading:
 						CancelLoad(i);
 						break;
-						// Hidden chunks are handled by the purge timer
-						// Unloaded: nothing to do
 				}
 			}
 		}
@@ -344,9 +317,10 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	{
 		if (_chunkVis[idx] == ChunkVisibility.Visible) return;
 
-		SetChunkAlpha(idx, 1f);
 		_chunkVis[idx] = ChunkVisibility.Visible;
 		_w.chunks[idx].isLoaded = true;
+		_chunkTargetAlpha[idx] = 1f;
+		EnqueueAlpha(idx);
 
 		if (!_pendingDecorSpawn.Contains(idx) && !_pendingDecorDespawn.Contains(idx))
 		{
@@ -360,17 +334,24 @@ public class MapChunkStreamerV3 : MonoBehaviour
 	{
 		if (_chunkVis[idx] == ChunkVisibility.Hidden) return;
 
-		SetChunkAlpha(idx, 0f);
 		_chunkVis[idx] = ChunkVisibility.Hidden;
 		_chunkHiddenSince[idx] = Time.time;
+		_chunkTargetAlpha[idx] = 0f;
+		EnqueueAlpha(idx);
 
-		// Despawn decorators
 		if (!_pendingDecorDespawn.Contains(idx))
 		{
 			_decorDespawnQueue.Enqueue(idx);
 			_pendingDecorDespawn.Add(idx);
 		}
 		_pendingDecorSpawn.Remove(idx);
+	}
+
+	private void EnqueueAlpha(int idx)
+	{
+		if (_pendingAlpha.Contains(idx)) return;
+		_pendingAlpha.Add(idx);
+		_alphaQueue.Enqueue(idx);
 	}
 
 	private void SetChunkAlpha(int idx, float alpha)
@@ -384,15 +365,18 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 		var bounds = new BoundsInt(new Vector3Int(tX, tY, 0), new Vector3Int(width, height, 1));
 
-		// Standard tilemaps — only touch alpha, leave RGB biome tint intact
-		ApplyAlphaToTilemap(landTilemap, bounds, alpha);
-		ApplyAlphaToTilemap(grassTilemap, bounds, alpha);
-		ApplyAlphaToTilemap(oceanOverlayTilemap, bounds, alpha);
-		ApplyAlphaToTilemap(oceanFloorShallowTilemap, bounds, alpha);
-		ApplyAlphaToTilemap(oceanFloorMediumTilemap, bounds, alpha);
-		ApplyAlphaToTilemap(oceanFloorDeepTilemap, bounds, alpha);
+		var bdef = _s.GetBiome(chunk.dominantBiome);
+		Color landBase  = (bdef != null && bdef.landColor  != Color.white) ? bdef.landColor  : Color.white;
+		Color grassBase = (bdef != null && bdef.grassColor != Color.white) ? bdef.grassColor : Color.white;
 
-		// Water tilemap has a pad offset
+		ApplyAlphaToTilemap(landTilemap,               bounds, alpha, landBase);
+		ApplyAlphaToTilemap(grassTilemap,              bounds, alpha, grassBase);
+		ApplyAlphaToTilemap(oceanOverlayTilemap,       bounds, alpha, Color.white);
+		ApplyAlphaToTilemap(oceanFloorShallowTilemap,  bounds, alpha, Color.white);
+		ApplyAlphaToTilemap(oceanFloorMediumTilemap,   bounds, alpha, Color.white);
+		ApplyAlphaToTilemap(oceanFloorDeepTilemap,     bounds, alpha, Color.white);
+		ApplyAlphaToTilemap(oceanFloorAbyssTilemap,    bounds, alpha, Color.white);
+
 		if (waterTilemap != null)
 		{
 			int pad = _d.pad;
@@ -403,26 +387,20 @@ public class MapChunkStreamerV3 : MonoBehaviour
 			var wBounds = new BoundsInt(
 				new Vector3Int(tX - wOL - pad, tY - wOB - pad, 0),
 				new Vector3Int(width + wOL + wOR, height + wOB + wOT, 1));
-			ApplyAlphaToTilemap(waterTilemap, wBounds, alpha);
+			ApplyAlphaToTilemap(waterTilemap, wBounds, alpha, Color.white);
 		}
 	}
 
-	/// <summary>
-	/// Sets only the alpha channel of each tile color, preserving the RGB biome tint.
-	/// Tiles with no explicit color default to Color.white in Unity, so GetColor returns white —
-	/// setting alpha on that is safe and correct.
-	/// </summary>
-	private static void ApplyAlphaToTilemap(Tilemap tm, BoundsInt bounds, float alpha)
+	private static void ApplyAlphaToTilemap(Tilemap tm, BoundsInt bounds, float alpha, Color baseColor)
 	{
 		if (tm == null) return;
+		Color c = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
 		for (int y = bounds.yMin; y < bounds.yMax; y++)
 		{
 			for (int x = bounds.xMin; x < bounds.xMax; x++)
 			{
 				var pos = new Vector3Int(x, y, 0);
-				if (tm.GetTile(pos) == null) continue; // skip empty cells
-				Color c = tm.GetColor(pos);
-				c.a = alpha;
+				if (!tm.HasTile(pos)) continue;
 				tm.SetColor(pos, c);
 			}
 		}
@@ -535,7 +513,7 @@ public class MapChunkStreamerV3 : MonoBehaviour
 				MapPainterV3.PaintChunkLayer(idx, layer, _d, _s,
 					waterTilemap, landTilemap, grassTilemap,
 					oceanOverlayTilemap,
-					oceanFloorShallowTilemap, oceanFloorMediumTilemap, oceanFloorDeepTilemap,
+					oceanFloorShallowTilemap, oceanFloorMediumTilemap, oceanFloorDeepTilemap, oceanFloorAbyssTilemap,
 					_w);
 
 				layer++;
@@ -551,7 +529,6 @@ public class MapChunkStreamerV3 : MonoBehaviour
 					_pendingLoad.Remove(idx);
 					_chunkOpProgress[idx] = 0;
 
-					// Queue decorator spawn
 					if (!_pendingDecorSpawn.Contains(idx) && !_pendingDecorDespawn.Contains(idx))
 					{
 						_chunkDecorCursor[idx] = 0;
@@ -563,8 +540,19 @@ public class MapChunkStreamerV3 : MonoBehaviour
 				{
 					_loadQueue.Dequeue();
 					_loadQueue.Enqueue(idx);
-					break; // one chunk per frame to keep it smooth
+					break;
 				}
+			}
+
+			// ---- SHOW / HIDE ALPHA ----
+			int alphaOps = 0;
+			while (_alphaQueue.Count > 0 && alphaOps < showHideChunksPerFrame)
+			{
+				int idx = _alphaQueue.Dequeue();
+				if (!_pendingAlpha.Contains(idx)) continue;
+				_pendingAlpha.Remove(idx);
+				SetChunkAlpha(idx, _chunkTargetAlpha[idx]);
+				alphaOps++;
 			}
 
 			// ---- HARD PURGE ----
@@ -639,7 +627,7 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 				decorOps += DespawnDecoratorsIncremental(idx, decoratorsPerFrame - decorOps);
 
-				if (_chunkActivePalms[idx].Count == 0 && _chunkActiveRocks[idx].Count == 0)
+				if (_chunkActiveDecorators[idx].Count == 0)
 				{
 					_decorDespawnQueue.Dequeue();
 					_pendingDecorDespawn.Remove(idx);
@@ -684,6 +672,7 @@ public class MapChunkStreamerV3 : MonoBehaviour
 			case MapPainterV3.LAYER_LAND: landTilemap?.SetTilesBlock(bounds, buf); break;
 			case MapPainterV3.LAYER_GRASS: grassTilemap?.SetTilesBlock(bounds, buf); break;
 			case MapPainterV3.LAYER_OVERLAY: oceanOverlayTilemap?.SetTilesBlock(bounds, buf); break;
+			case MapPainterV3.LAYER_OCEAN_ABYSS: oceanFloorAbyssTilemap?.SetTilesBlock(bounds, buf); break;
 		}
 	}
 
@@ -711,45 +700,39 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 	private int SpawnDecoratorsIncremental(int chunkIndex, int budget)
 	{
-		if (_w.chunkPalmIndices == null || chunkIndex >= _w.chunkPalmIndices.Length) return 0;
+		if (_w.chunkDecoratorIndices == null || chunkIndex >= _w.chunkDecoratorIndices.Length) return 0;
 
-		var palms = _w.chunkPalmIndices[chunkIndex];
-		var rocks = _w.chunkRockIndices[chunkIndex];
-		var activePalms = _chunkActivePalms[chunkIndex];
-		var activeRocks = _chunkActiveRocks[chunkIndex];
+		var indices = _w.chunkDecoratorIndices[chunkIndex];
+		var active = _chunkActiveDecorators[chunkIndex];
 		int cursor = _chunkDecorCursor[chunkIndex];
-		int total = palms.Count + rocks.Count;
+		int total = indices.Count;
 		int done = 0;
 
 		while (cursor < total && done < budget)
 		{
-			bool isPalm = cursor < palms.Count;
-			int tileIdx = isPalm ? palms[cursor] : rocks[cursor - palms.Count];
-			// Skip permanently felled trees/rocks
-			if (isPalm && _felledPalmIndices.Contains(tileIdx)) { cursor++; done++; continue; }
-			if (!isPalm && _felledRockIndices.Contains(tileIdx)) { cursor++; done++; continue; }
-			var bdef = _s.GetBiome((BiomeType)_d.biome[tileIdx]);
+			int tileIdx = indices[cursor];
 
-			if (bdef != null)
+			if (!_felledDecoratorIndices.Contains(tileIdx))
 			{
-				GameObject prefab = isPalm ? bdef.palmPrefab : bdef.rockPrefab;
-				if (prefab != null)
+				int slotVal = _d.decoratorSlot[tileIdx] - 1;
+				var bdef = _s.GetBiome((BiomeType)_d.biome[tileIdx]);
+				if (bdef != null && bdef.decorators != null && slotVal < bdef.decorators.Length)
 				{
-					Transform parent = isPalm
-						? (palmParent != null ? palmParent : transform)
-						: (rockParent != null ? rockParent : transform);
-
-					Vector3 worldPos = GetWorldPos(tileIdx % _d.size, tileIdx / _d.size);
-					GameObject go = GetPooled(isPalm ? _palmPool : _rockPool, prefab, parent, worldPos);
-					// Register tile index so the streamer knows if this decorator is permanently destroyed
-					var rec = go.GetComponent<DecoratorRecord>() ?? go.AddComponent<DecoratorRecord>();
-					rec.streamer = this; rec.tileIndex = tileIdx; rec.isPalm = isPalm;
-
-					// Store in the correct list — no tag needed for pool routing
-					if (isPalm) activePalms.Add(go);
-					else activeRocks.Add(go);
+					var entry = bdef.decorators[slotVal];
+					if (entry.prefab != null)
+					{
+						Transform parent = decoratorParent != null ? decoratorParent : transform;
+						Vector3 worldPos = GetWorldPos(tileIdx % _d.size, tileIdx / _d.size) + (Vector3)entry.spawnOffset;
+						GameObject go = GetPooled(entry.prefab, parent, worldPos);
+						var rec = go.GetComponent<DecoratorRecord>() ?? go.AddComponent<DecoratorRecord>();
+						rec.streamer = this;
+						rec.tileIndex = tileIdx;
+						rec.sourcePrefab = entry.prefab;
+						active.Add(go);
+					}
 				}
 			}
+
 			cursor++;
 			done++;
 		}
@@ -760,39 +743,35 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 	private bool IsDecorSpawnComplete(int idx)
 	{
-		if (_w.chunkPalmIndices == null || idx >= _w.chunkPalmIndices.Length) return true;
-		return _chunkDecorCursor[idx] >= _w.chunkPalmIndices[idx].Count + _w.chunkRockIndices[idx].Count;
+		if (_w.chunkDecoratorIndices == null || idx >= _w.chunkDecoratorIndices.Length) return true;
+		return _chunkDecorCursor[idx] >= _w.chunkDecoratorIndices[idx].Count;
 	}
 
 	private int DespawnDecoratorsIncremental(int chunkIndex, int budget)
 	{
-		if (_chunkActivePalms == null || chunkIndex >= _chunkActivePalms.Length) return 0;
+		if (_chunkActiveDecorators == null || chunkIndex >= _chunkActiveDecorators.Length) return 0;
 
-		var palms = _chunkActivePalms[chunkIndex];
-		var rocks = _chunkActiveRocks[chunkIndex];
+		var active = _chunkActiveDecorators[chunkIndex];
 		int done = 0;
 
-		// Despawn palms first, then rocks — always routes to the correct pool
-		while (palms.Count > 0 && done < budget)
+		while (active.Count > 0 && done < budget)
 		{
-			int last = palms.Count - 1;
-			GameObject go = palms[last];
-			palms.RemoveAt(last);
+			int last = active.Count - 1;
+			GameObject go = active[last];
+			active.RemoveAt(last);
 			done++;
 			if (go == null) continue;
 			go.SetActive(false);
-			_palmPool.Push(go);
-		}
-
-		while (rocks.Count > 0 && done < budget)
-		{
-			int last = rocks.Count - 1;
-			GameObject go = rocks[last];
-			rocks.RemoveAt(last);
-			done++;
-			if (go == null) continue;
-			go.SetActive(false);
-			_rockPool.Push(go);
+			var rec = go.GetComponent<DecoratorRecord>();
+			if (rec != null && rec.sourcePrefab != null)
+			{
+				if (!_decoratorPools.TryGetValue(rec.sourcePrefab, out var pool))
+				{
+					pool = new Stack<GameObject>();
+					_decoratorPools[rec.sourcePrefab] = pool;
+				}
+				pool.Push(go);
+			}
 		}
 
 		return done;
@@ -800,26 +779,30 @@ public class MapChunkStreamerV3 : MonoBehaviour
 
 	private void ReturnAllDecoratorsToPool()
 	{
-		if (_chunkActivePalms == null) return;
+		if (_chunkActiveDecorators == null) return;
 
-		for (int i = 0; i < _chunkActivePalms.Length; i++)
+		for (int i = 0; i < _chunkActiveDecorators.Length; i++)
 		{
-			ReturnListToPool(_chunkActivePalms[i], _palmPool);
-			ReturnListToPool(_chunkActiveRocks[i], _rockPool);
+			var active = _chunkActiveDecorators[i];
+			if (active == null) continue;
+			for (int j = active.Count - 1; j >= 0; j--)
+			{
+				var go = active[j];
+				if (go == null) continue;
+				go.SetActive(false);
+				var rec = go.GetComponent<DecoratorRecord>();
+				if (rec != null && rec.sourcePrefab != null)
+				{
+					if (!_decoratorPools.TryGetValue(rec.sourcePrefab, out var pool))
+					{
+						pool = new Stack<GameObject>();
+						_decoratorPools[rec.sourcePrefab] = pool;
+					}
+					pool.Push(go);
+				}
+			}
+			active.Clear();
 		}
-	}
-
-	private static void ReturnListToPool(List<GameObject> list, Stack<GameObject> pool)
-	{
-		if (list == null) return;
-		for (int j = list.Count - 1; j >= 0; j--)
-		{
-			var go = list[j];
-			if (go == null) continue;
-			go.SetActive(false);
-			pool.Push(go);
-		}
-		list.Clear();
 	}
 
 	// -------------------------------------------------------
@@ -834,15 +817,25 @@ public class MapChunkStreamerV3 : MonoBehaviour
 		return new Vector3(gridOrigin.x + x + 0.5f, gridOrigin.y + y + 0.5f, 0f);
 	}
 
-	private GameObject GetPooled(Stack<GameObject> pool, GameObject prefab, Transform parent, Vector3 worldPos)
+	private GameObject GetPooled(GameObject prefab, Transform parent, Vector3 worldPos)
 	{
-		GameObject go;
-		if (pool.Count > 0 && (go = pool.Pop()) != null)
+		if (!_decoratorPools.TryGetValue(prefab, out var pool))
 		{
-			go.transform.SetParent(parent, false);
-			go.transform.position = worldPos;
-			go.SetActive(true);
-			return go;
+			pool = new Stack<GameObject>();
+			_decoratorPools[prefab] = pool;
+		}
+
+		GameObject go;
+		while (pool.Count > 0)
+		{
+			go = pool.Pop();
+			if (go != null)
+			{
+				go.transform.SetParent(parent, false);
+				go.transform.position = worldPos;
+				go.SetActive(true);
+				return go;
+			}
 		}
 		return Instantiate(prefab, worldPos, Quaternion.identity, parent);
 	}
@@ -855,20 +848,16 @@ public class MapChunkStreamerV3 : MonoBehaviour
 			System.Array.Clear(arr, 0, count);
 	}
 }
-/// <summary>
-/// Attached to every spawned decorator. Notifies the streamer when the object is
-/// permanently destroyed (e.g. tree chopped down) so the tile is never respawned.
-/// </summary>
+
 internal sealed class DecoratorRecord : MonoBehaviour
 {
 	internal MapChunkStreamerV3 streamer;
 	internal int tileIndex;
-	internal bool isPalm;
+	internal GameObject sourcePrefab;
 
 	private void OnDestroy()
 	{
 		if (streamer == null) return;
-		if (isPalm) streamer._felledPalmIndices.Add(tileIndex);
-		else streamer._felledRockIndices.Add(tileIndex);
+		streamer._felledDecoratorIndices.Add(tileIndex);
 	}
 }

@@ -2,6 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+public struct IslandInfoV3
+{
+	public float cx, cy, r;
+	public IslandInfoV3(float cx, float cy, float r) { this.cx = cx; this.cy = cy; this.r = r; }
+}
+
 public sealed class MapWorkspaceV3
 {
 	public int size;
@@ -21,6 +27,7 @@ public sealed class MapWorkspaceV3
 	public Vector2[] islandCenters;
 	public float[] islandRadii;
 	public BiomeType[] islandBiomes;
+	public IslandInfoV3[] islandData;
 	public int islandCount;
 	public int[] islandGrid;
 	public int islandGridW, islandGridH;
@@ -40,30 +47,20 @@ public sealed class MapWorkspaceV3
 	public TileBase[] overlayTiles;
 
 	public TileBase[] paintBuffer;
+	public TileChangeData[] tileChangeBuffer;
 	public float[] beachWidth;
+	public float[] warpDX;
+	public float[] warpDY;
 	public int[] biomeQueue;
 	public bool[] biomeVisited;
 	public int[] chunkLayerProgress;
 	public int[] biomeScratch;
 
-	public List<int> palmCandidates = new List<int>(4096);
-	public List<int> rockCandidates = new List<int>(2048);
-	public List<Vector2Int> palmAccepted = new List<Vector2Int>(512);
-	public List<Vector2Int> rockAccepted = new List<Vector2Int>(512);
+	public List<int> decoratorCandidates = new List<int>(4096);
 
-	public int decorGridW;
-	public int decorGridH;
-	public float decorCellSize;
-	public int[] palmGrid;
-	public int[] rockGrid;
-
-	// Per-chunk decorator positions (built once after generation, read-only during streaming)
-	// chunkIndex -> list of flat tile indices where decorators should spawn
-	public List<int>[] chunkPalmIndices;
-	public List<int>[] chunkRockIndices;
-
-	// Per-chunk active GameObjects (owned by streamer, stored here for easy lookup)
-	public List<GameObject>[] chunkActiveDecorators;
+	// Per-chunk decorator tile indices (built once after generation, read-only during streaming)
+	// chunkIndex -> flat tile indices where decorators should spawn
+	public List<int>[] chunkDecoratorIndices;
 
 	public void Ensure(int size, int pad)
 	{
@@ -92,6 +89,8 @@ public sealed class MapWorkspaceV3
 
 		paintBuffer = new TileBase[n];
 		beachWidth = new float[n];
+		warpDX = new float[n];
+		warpDY = new float[n];
 		biomeQueue = new int[n * 2];
 		biomeVisited = new bool[n];
 		biomeScratch = new int[System.Enum.GetValues(typeof(BiomeType)).Length];
@@ -99,6 +98,7 @@ public sealed class MapWorkspaceV3
 		islandCenters = new Vector2[256];
 		islandRadii = new float[256];
 		islandBiomes = new BiomeType[256];
+		islandData = new IslandInfoV3[256];
 		islandGrid = new int[1];
 		islandCount = 0;
 		islandGridW = islandGridH = 0;
@@ -108,9 +108,15 @@ public sealed class MapWorkspaceV3
 		chunkCols = chunkRows = chunkSize = 0;
 		chunkLayerProgress = null;
 
-		chunkPalmIndices = null;
-		chunkRockIndices = null;
-		chunkActiveDecorators = null;
+		chunkDecoratorIndices = null;
+	}
+
+	public void EnsureTileChangeBuffer(int minSize)
+	{
+		if (tileChangeBuffer != null && tileChangeBuffer.Length >= minSize) return;
+		int len = tileChangeBuffer == null ? 1024 : tileChangeBuffer.Length;
+		while (len < minSize) len <<= 1;
+		tileChangeBuffer = new TileChangeData[len];
 	}
 
 	public void EnsureChunkLayerProgress(int chunkCount)
@@ -137,6 +143,7 @@ public sealed class MapWorkspaceV3
 		islandCenters = new Vector2[len];
 		islandRadii = new float[len];
 		islandBiomes = new BiomeType[len];
+		islandData = new IslandInfoV3[len];
 	}
 
 	public void EnsureIslandGrid(int gw, int gh)
@@ -152,46 +159,21 @@ public sealed class MapWorkspaceV3
 		islandGridH = gh;
 	}
 
-	public void EnsureDecorGrids(int gw, int gh)
-	{
-		int need = Mathf.Max(1, gw * gh);
-		if (palmGrid == null || palmGrid.Length < need)
-		{
-			palmGrid = new int[need];
-			rockGrid = new int[need];
-		}
-		decorGridW = gw;
-		decorGridH = gh;
-	}
-
-	/// <summary>
-	/// Allocates per-chunk decorator index lists. Called once after chunks are built.
-	/// </summary>
 	public void EnsureChunkDecoratorStorage(int chunkCount)
 	{
-		if (chunkPalmIndices != null && chunkPalmIndices.Length >= chunkCount) return;
+		if (chunkDecoratorIndices != null && chunkDecoratorIndices.Length >= chunkCount) return;
 
-		chunkPalmIndices = new List<int>[chunkCount];
-		chunkRockIndices = new List<int>[chunkCount];
-		chunkActiveDecorators = new List<GameObject>[chunkCount];
+		chunkDecoratorIndices = new List<int>[chunkCount];
 
 		for (int i = 0; i < chunkCount; i++)
-		{
-			chunkPalmIndices[i] = new List<int>();
-			chunkRockIndices[i] = new List<int>();
-			chunkActiveDecorators[i] = new List<GameObject>();
-		}
+			chunkDecoratorIndices[i] = new List<int>();
 	}
 
 	public void ClearChunkDecoratorStorage(int chunkCount)
 	{
-		if (chunkPalmIndices == null) return;
-		for (int i = 0; i < chunkCount && i < chunkPalmIndices.Length; i++)
-		{
-			chunkPalmIndices[i]?.Clear();
-			chunkRockIndices[i]?.Clear();
-			chunkActiveDecorators[i]?.Clear();
-		}
+		if (chunkDecoratorIndices == null) return;
+		for (int i = 0; i < chunkCount && i < chunkDecoratorIndices.Length; i++)
+			chunkDecoratorIndices[i]?.Clear();
 	}
 
 	public MapChunkV3 GetChunkForTile(int x, int y)

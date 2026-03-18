@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: WoodenFloor2Tile
   m_EditorClassIdentifier: 
   tile: {fileID: 11400000, guid: 2f6d3d19bc336c4409a4cdeaa853aa7b, type: 2}
+  altTile: {fileID: 0}
   pillarTile: {fileID: 11400000, guid: 70c987e18737fae429acc08f8c7b5c61, type: 2}
+  menuIcon: {fileID: -191558415, guid: dd942d5b854973d4a95a5595efe9c023, type: 3}
+  tileCategory: 0
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}
     amount: 2

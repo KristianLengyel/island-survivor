@@ -27,6 +27,7 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 	[SerializeField] private bool showInventoryNotification = true;
 
 	private Collider2D col;
+	private Highlightable _highlightable;
 
 	private int currentHealth;
 	private bool isBroken;
@@ -40,6 +41,7 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 	private void Awake()
 	{
 		col = GetComponent<Collider2D>();
+		_highlightable = GetComponent<Highlightable>();
 		ResolveRenderers();
 
 		if (outlineRenderer != null)
@@ -105,6 +107,12 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 
 	public void SetHighlighted(bool highlight)
 	{
+		if (_highlightable != null)
+		{
+			_highlightable.SetHighlight(highlight && !isBroken && HasRequiredTool());
+			return;
+		}
+
 		if (outlineRenderer == null) return;
 		if (!outlineRenderer.gameObject.activeSelf) outlineRenderer.gameObject.SetActive(true);
 
@@ -171,7 +179,9 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 
 		isBroken = true;
 
-		if (outlineRenderer != null)
+		if (_highlightable != null)
+			_highlightable.SetHighlight(false);
+		else if (outlineRenderer != null)
 			outlineRenderer.enabled = false;
 
 		if (col != null)
@@ -261,6 +271,9 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 
 		currentHealth = Mathf.Clamp(st.hp, 0, mh);
 		isBroken = st.broken;
+
+		if (_highlightable != null)
+			_highlightable.SetHighlight(false);
 
 		if (outlineRenderer != null)
 		{

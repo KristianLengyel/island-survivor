@@ -43,6 +43,8 @@ public class CatchingNet : MonoBehaviour, IInteractable, ISaveableComponent
 				spawnableMovement.StartFollowingHook(transform);
 			}
 
+			other.enabled = false;
+
 			ClickableObject clickableObject = other.GetComponent<ClickableObject>();
 			if (clickableObject != null)
 			{

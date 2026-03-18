@@ -1,10 +1,20 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-/// <summary>
-/// ScriptableObject for a single biome. Add new biomes by creating new assets �
-/// no code changes required in the generation pipeline.
-/// </summary>
+public enum DecoratorPlacementZone { Beach, Grass }
+
+[System.Serializable]
+public class BiomeDecoratorEntry
+{
+	public GameObject prefab;
+	public DecoratorPlacementZone placementZone;
+	[Min(0)] public int coastDistMin;
+	[Min(0)] public int coastDistMax = 28;
+	[Range(0f, 1f)] public float spawnChance = 0.5f;
+	[Min(1)] public int minSpacing = 4;
+	public Vector2 spawnOffset;
+}
+
 [CreateAssetMenu(fileName = "BiomeDef_Tropical", menuName = "MapGenV3/BiomeDefinition")]
 public class BiomeDefinitionV3 : ScriptableObject
 {
@@ -13,21 +23,13 @@ public class BiomeDefinitionV3 : ScriptableObject
 	public string biomeName = "Tropical";
 
 	[Header("Tiles")]
-	public TileBase landTile;       // beach / sand tile
-	public TileBase grassTile;      // grass / interior tile
-	public TileBase[] landVariants; // optional extra variants (randomly chosen)
+	public TileBase landTile;
+	public TileBase grassTile;
+	public TileBase[] landVariants;
 	public TileBase[] grassVariants;
 
-	[Header("Palms")]
-	public GameObject palmPrefab;
-	[Range(0f, 1f)] public float palmSpawnChance = 0.65f;
-	[Min(1)] public int palmMinDistance = 6;
-	[Min(0)] public int palmCoastMin = 3;
-	[Min(0)] public int palmCoastMax = 28;
-
-	[Header("Rocks")]
-	public GameObject rockPrefab;
-	[Range(0f, 1f)] public float rockSpawnChance = 0.2f;
+	[Header("Decorators")]
+	public BiomeDecoratorEntry[] decorators;
 
 	[Header("Seaweed")]
 	[Range(0f, 1f)] public float seaweedDensityMultiplier = 1.0f;
@@ -37,6 +39,6 @@ public class BiomeDefinitionV3 : ScriptableObject
 	public Color grassColor = Color.white;
 
 	[Header("Mini-Map Colors")]
-	public Color mapLandColor  = new Color(0.85f, 0.78f, 0.50f); // sand-ish default
-	public Color mapGrassColor = new Color(0.27f, 0.60f, 0.25f); // green default
+	public Color mapLandColor  = new Color(0.85f, 0.78f, 0.50f);
+	public Color mapGrassColor = new Color(0.27f, 0.60f, 0.25f);
 }

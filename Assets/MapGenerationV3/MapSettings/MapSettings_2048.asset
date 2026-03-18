@@ -17,16 +17,16 @@ MonoBehaviour:
   chunkSize: 32
   useRandomSeed: 1
   seedInput: island
-  islandCount: 1760
-  islandMinSpacing: 40
-  islandMinRadius: 16
-  islandMaxRadius: 64
+  islandCount: 1400
+  islandMinSpacing: 9
+  islandMinRadius: 4
+  islandMaxRadius: 14
   islandSharpness: 1.2
-  islandPlacementAttemptsPerIsland: 30
-  warpScaleA: 56
-  warpScaleB: 112
-  warpAmplitude: 12
-  edgeNoiseScale: 120
+  islandPlacementAttemptsPerIsland: 50
+  warpScaleA: 14
+  warpScaleB: 28
+  warpAmplitude: 3
+  edgeNoiseScale: 30
   edgeNoiseStrength: 0.1
   ridgeNoiseStrength: 0.06
   caIterations: 6
@@ -35,31 +35,33 @@ MonoBehaviour:
   landThreshold: 0.46
   borderWater: 80
   centerNoIslandRadius: 80
-  minIslandTiles: 192
-  minLakeTiles: 96
+  minIslandTiles: 12
+  minLakeTiles: 6
   morphologyClosingIterations: 0
-  beachWidthMin: 4
-  beachWidthMax: 16
+  beachWidthMin: 1
+  beachWidthMax: 4
   grassInset: 1
   naturalShallowCut: 0.28
   naturalMediumCut: 0.62
-  shelfDistanceTiles: 40
+  shelfDistanceTiles: 10
   shelfStrength: 0.7
-  seaweedScale: 80
+  abyssNoiseScale: 18
+  abyssThreshold: 0.72
+  seaweedScale: 20
   seaweedThreshold: 0.62
   seaweedMinDepth: 2
-  rockSpawnChance: 0.3
-  rockMinDistance: 12
-  rockCoastMin: 1
-  rockCoastMax: 16
+  seaweedJitterScale: 3
+  seaweedEdgeJitter: 0.15
   dockWidth: 2
   dockHeight: 2
-  dockTile: {fileID: 11400000, guid: 09d9c9c052da7bc4dace2fcce2bd5528, type: 2}
+  dockTile: {fileID: 11400000, guid: b0a54154ffd81a543adf4bf9d099eb1b, type: 2}
+  pillarTile: {fileID: 11400000, guid: e1a5eaad8fabc064b9621782eb1f525d, type: 2}
   waterTile: {fileID: 11400000, guid: f3f8497b1614f43d6915ff827b0bf27a, type: 2}
   oceanFloorShallowTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
   oceanFloorMediumTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
   oceanFloorDeepTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
-  seaweedTile: {fileID: 11400000, guid: e23441c2ba80c6f408c7cc7b622b732b, type: 2}
+  oceanFloorAbyssTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  seaweedTile: {fileID: 11400000, guid: 6054c8eb3928bd947bc50ea496952d25, type: 2}
   biomeDefinitions:
   - {fileID: 11400000, guid: 4242a6d1ae54fe349b08097a8f782764, type: 2}
   waterOverlapLandInland: 0

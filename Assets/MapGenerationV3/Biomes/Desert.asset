@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 714f46d1aabc8af42acf22c1dc698536, type: 3}
+  m_Name: Desert
+  m_EditorClassIdentifier: Assembly-CSharp::BiomeDefinitionV3
+  biomeType: 2
+  biomeName: Desert
+  landTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  grassTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  landVariants: []
+  grassVariants: []
+  decorators:
+  - prefab: {fileID: 277635162677226526, guid: a6afb7c4c2e22874b80961e1b936f086, type: 3}
+    placementZone: 1
+    coastDistMin: 2
+    coastDistMax: 28
+    spawnChance: 0.1
+    minSpacing: 2
+    spawnOffset: {x: 0, y: 1}
+  - prefab: {fileID: 1271184125440299910, guid: 759a7559bde1ad9478e8c0aeb493cbad, type: 3}
+    placementZone: 1
+    coastDistMin: 2
+    coastDistMax: 28
+    spawnChance: 0.1
+    minSpacing: 2
+    spawnOffset: {x: 0, y: 0}
+  - prefab: {fileID: 6395853453322164192, guid: f6646b77d1ad141409eb8d2a5a0c48ce, type: 3}
+    placementZone: 1
+    coastDistMin: 2
+    coastDistMax: 28
+    spawnChance: 0.1
+    minSpacing: 2
+    spawnOffset: {x: 0, y: 0}
+  - prefab: {fileID: 454455804191405093, guid: 08d86f23457efda4da5a3a22ed05ae39, type: 3}
+    placementZone: 1
+    coastDistMin: 2
+    coastDistMax: 28
+    spawnChance: 0.1
+    minSpacing: 2
+    spawnOffset: {x: 0, y: 1}
+  seaweedDensityMultiplier: 0.118
+  landColor: {r: 0.89411765, g: 0.69803923, b: 0.5294118, a: 1}
+  grassColor: {r: 0.89411765, g: 0.69803923, b: 0.5294118, a: 1}
+  mapLandColor: {r: 0.84313726, g: 0.6392157, b: 0.44313726, a: 1}
+  mapGrassColor: {r: 0.89411765, g: 0.69803923, b: 0.5294118, a: 1}

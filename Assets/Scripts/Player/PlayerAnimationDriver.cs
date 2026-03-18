@@ -6,11 +6,26 @@ public class PlayerAnimationDriver : MonoBehaviour
 	private PlayerInputController input;
 	private PlayerTileDetector tileDetector;
 
+	private bool _facingOverride;
+	private Vector2 _facingDir;
+
 	public void Initialize(Animator animator, PlayerInputController input, PlayerTileDetector tileDetector)
 	{
 		this.animator = animator;
 		this.input = input;
 		this.tileDetector = tileDetector;
+	}
+
+	public void SetFacingDirection(Vector2 dir)
+	{
+		_facingOverride = true;
+		_facingDir = dir;
+	}
+
+	public void ClearFacingDirection()
+	{
+		_facingOverride = false;
+		_facingDir = Vector2.zero;
 	}
 
 	public void Tick()
@@ -28,17 +43,19 @@ public class PlayerAnimationDriver : MonoBehaviour
 			animator.SetBool("isSwimming", tileDetector.IsInWater());
 		}
 
-		if (move != Vector2.zero)
+		Vector2 faceSource = _facingOverride && _facingDir != Vector2.zero ? _facingDir : move;
+
+		if (faceSource != Vector2.zero)
 		{
-			if (Mathf.Abs(move.x) > Mathf.Abs(move.y))
+			if (Mathf.Abs(faceSource.x) > Mathf.Abs(faceSource.y))
 			{
-				animator.SetFloat("lastMoveX", Mathf.Sign(move.x));
+				animator.SetFloat("lastMoveX", Mathf.Sign(faceSource.x));
 				animator.SetFloat("lastMoveY", 0f);
 			}
 			else
 			{
 				animator.SetFloat("lastMoveX", 0f);
-				animator.SetFloat("lastMoveY", Mathf.Sign(move.y));
+				animator.SetFloat("lastMoveY", Mathf.Sign(faceSource.y));
 			}
 		}
 	}

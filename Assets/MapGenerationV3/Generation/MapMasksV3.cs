@@ -1,4 +1,6 @@
-﻿public static class MapMasksV3
+﻿using UnityEngine;
+
+public static class MapMasksV3
 {
 	public static void ThresholdLand(MapDataV3 d, MapSettingsV3 s)
 	{
@@ -43,53 +45,42 @@
 		int border = s.borderWater;
 		int birth = s.caBirthThreshold;
 		int surv = s.caSurvivalThreshold;
+		int xMin = Mathf.Max(1, border);
+		int xMax = Mathf.Min(size - 1, size - border);
+		int yMin = Mathf.Max(1, border);
+		int yMax = Mathf.Min(size - 1, size - border);
 
 		for (int it = 0; it < s.caIterations; it++)
 		{
+			byte[] land = d.land;
+
 			for (int y = 0; y < size; y++)
 			{
 				int row = y * size;
-				for (int x = 0; x < size; x++)
+				if (y < yMin || y >= yMax)
 				{
-					int i = row + x;
+					for (int x = 0; x < size; x++) tmp[row + x] = 0;
+					continue;
+				}
+				for (int x = 0; x < xMin; x++) tmp[row + x] = 0;
+				for (int x = xMax; x < size; x++) tmp[row + x] = 0;
 
-					if (y < border || y >= size - border ||
-						x < border || x >= size - border)
-					{
-						tmp[i] = 0;
-						continue;
-					}
-
-					int neighbours = CountLandNeighbours8(d.land, x, y, size);
-
-					if (d.land[i] == 1)
-						tmp[i] = (byte)(neighbours >= surv ? 1 : 0);
-					else
-						tmp[i] = (byte)(neighbours >= birth ? 1 : 0);
+				int prev = row - size;
+				int next = row + size;
+				for (int x = xMin; x < xMax; x++)
+				{
+					int n =
+						land[prev + x - 1] + land[prev + x] + land[prev + x + 1] +
+						land[row  + x - 1]                  + land[row  + x + 1] +
+						land[next + x - 1] + land[next + x] + land[next + x + 1];
+					tmp[row + x] = (byte)(land[row + x] == 1
+						? (n >= surv  ? 1 : 0)
+						: (n >= birth ? 1 : 0));
 				}
 			}
 
 			System.Array.Copy(tmp, d.land, size * size);
 		}
-	}
-
-	private static int CountLandNeighbours8(byte[] land, int x, int y, int size)
-	{
-		int count = 0;
-		for (int dy = -1; dy <= 1; dy++)
-		{
-			int ny = y + dy;
-			if ((uint)ny >= (uint)size) continue;
-			int nrow = ny * size;
-			for (int dx = -1; dx <= 1; dx++)
-			{
-				if (dx == 0 && dy == 0) continue;
-				int nx = x + dx;
-				if ((uint)nx >= (uint)size) continue;
-				if (land[nrow + nx] == 1) count++;
-			}
-		}
-		return count;
 	}
 
 	public static void MorphologyClosing(MapDataV3 d, int iterations, byte[] tmp)

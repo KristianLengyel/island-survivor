@@ -8,6 +8,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	public Tilemap wallTilemap;
 	public Tilemap tempTilemap;
 	public Tilemap progressTilemap;
+	public Tilemap ghostTilemap;
 	public Tilemap waterTilemap;
 	public Tilemap betweenOceanFloorWaterTilemap;
 	public Tilemap objectsTilemap;
@@ -30,6 +31,9 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	private const int PlacementRange = 2;
 	[SerializeField] private float holdDuration = 0.5f;
 
+	private static readonly Color GhostValid   = new Color(0f,  1f, 0f,  0.45f);
+	private static readonly Color GhostInvalid = new Color(1f, 0.15f, 0.15f, 0.45f);
+
 	private bool canPlaceTile = true;
 	private bool canRemoveTile = true;
 
@@ -41,6 +45,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 
 	private Vector3Int? lastTempIndicatorCell;
 	private Vector3Int? lastProgressCell;
+	private Vector3Int? lastGhostCell;
 	private int lastProgressSpriteIndex = -1;
 
 	private readonly Collider2D[] overlapBuffer = new Collider2D[16];
@@ -343,6 +348,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	private void ShowIndicator(Vector3Int gridPos)
 	{
 		SetTempIndicator(gridPos);
+		UpdateGhostTile(gridPos);
 
 		bool shouldShowProgress =
 			isHoldingRightClick &&
@@ -374,6 +380,38 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		{
 			ClearProgressIndicator();
 		}
+	}
+
+	private void UpdateGhostTile(Vector3Int gridPos)
+	{
+		if (ghostTilemap == null) return;
+
+		var bm = GameManager.Instance.BuildingManager;
+		TileBase selected = bm.GetSelectedTile();
+
+		if (selected == null)
+		{
+			ClearGhostTile();
+			return;
+		}
+
+		TileCategory cat = bm.GetTileCategory(selected);
+		bool canPlace;
+		if (cat == TileCategory.Floor)
+			canPlace = buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos) && bm.HasEnoughResources(selected);
+		else
+			canPlace = buildingTilemap.GetTile(gridPos) != null && wallTilemap.GetTile(gridPos) == null && bm.HasEnoughResources(selected);
+
+		TileBase ghostTile = (cat == TileCategory.Door)
+			? bm.ResolveDoorTile(selected, gridPos)
+			: selected;
+
+		if (lastGhostCell.HasValue && lastGhostCell.Value != gridPos)
+			ghostTilemap.SetTile(lastGhostCell.Value, null);
+
+		ghostTilemap.SetTile(gridPos, ghostTile);
+		ghostTilemap.color = canPlace ? GhostValid : GhostInvalid;
+		lastGhostCell = gridPos;
 	}
 
 	private void SetTempIndicator(Vector3Int cell)
@@ -409,10 +447,21 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		}
 	}
 
+	private void ClearGhostTile()
+	{
+		if (ghostTilemap == null) return;
+		if (lastGhostCell.HasValue)
+		{
+			ghostTilemap.SetTile(lastGhostCell.Value, null);
+			lastGhostCell = null;
+		}
+	}
+
 	private void ClearAllIndicators()
 	{
 		ClearTempIndicator();
 		ClearProgressIndicator();
+		ClearGhostTile();
 	}
 
 	private bool IsWithinRange(Vector3Int gridPos)

@@ -45,21 +45,24 @@ MonoBehaviour:
   naturalMediumCut: 0.62
   shelfDistanceTiles: 10
   shelfStrength: 0.7
+  abyssNoiseScale: 18
+  abyssThreshold: 0.72
   seaweedScale: 20
   seaweedThreshold: 0.62
   seaweedMinDepth: 2
-  rockSpawnChance: 0.3
-  rockMinDistance: 3
-  rockCoastMin: 1
-  rockCoastMax: 4
+  seaweedJitterScale: 3
+  seaweedEdgeJitter: 0.15
   dockWidth: 2
   dockHeight: 2
-  dockTile: {fileID: 11400000, guid: 09d9c9c052da7bc4dace2fcce2bd5528, type: 2}
+  dockTile: {fileID: 11400000, guid: b0a54154ffd81a543adf4bf9d099eb1b, type: 2}
+  pillarTile: {fileID: 11400000, guid: e1a5eaad8fabc064b9621782eb1f525d, type: 2}
   waterTile: {fileID: 11400000, guid: f3f8497b1614f43d6915ff827b0bf27a, type: 2}
   oceanFloorShallowTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
   oceanFloorMediumTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
   oceanFloorDeepTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
-  seaweedTile: {fileID: 11400000, guid: e23441c2ba80c6f408c7cc7b622b732b, type: 2}
+  oceanFloorAbyssTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  seaweedTile: {fileID: 11400000, guid: 6054c8eb3928bd947bc50ea496952d25, type: 2}
   biomeDefinitions:
   - {fileID: 11400000, guid: 4242a6d1ae54fe349b08097a8f782764, type: 2}
+  - {fileID: 11400000, guid: 529184f248b1ee94ebebaf3e4020761e, type: 2}
   waterOverlapLandInland: 0

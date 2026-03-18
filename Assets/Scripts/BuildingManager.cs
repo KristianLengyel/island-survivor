@@ -7,6 +7,7 @@ public class BuildingManager : MonoBehaviour
 	[SerializeField] private List<TileResourceRequirement> tileResourceRequirements;
 	[SerializeField] private Tilemap buildingTilemap;
 	[SerializeField] private Tilemap wallTilemap;
+	[SerializeField] private bool showIndoorDebug;
 
 	private Dictionary<TileBase, TileResourceRequirement> requirementsDict;
 	private TileBase selectedTile;
@@ -197,6 +198,23 @@ public class BuildingManager : MonoBehaviour
 
 		reachable[idx] = true;
 		queue.Enqueue(cell);
+	}
+
+	private void OnDrawGizmos()
+	{
+		if (!showIndoorDebug || reachableGrid == null || buildingTilemap == null) return;
+
+		Gizmos.color = new Color(0f, 1f, 0.4f, 0.35f);
+		for (int y = 0; y < gridHeight; y++)
+		{
+			for (int x = 0; x < gridWidth; x++)
+			{
+				if (reachableGrid[y * gridWidth + x]) continue;
+				Vector3Int cell = new Vector3Int(gridOrigin.x + x, gridOrigin.y + y, 0);
+				if (buildingTilemap.GetTile(cell) == null) continue;
+				Gizmos.DrawCube(buildingTilemap.GetCellCenterWorld(cell), new Vector3(0.9f, 0.9f, 0.01f));
+			}
+		}
 	}
 
 	public bool IsIndoors(Vector3 worldPos)

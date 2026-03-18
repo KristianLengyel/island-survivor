@@ -14,14 +14,14 @@ public static class MapBiomesV3
 		float medCut = Mathf.Clamp01(s.naturalMediumCut);
 		if (medCut < shCut) medCut = shCut;
 
+		float abyssScale = Mathf.Max(0.001f, s.abyssNoiseScale);
+		float abyssThresh = s.abyssThreshold;
+		float abyssOffX = rng.Next01() * 1000f;
+		float abyssOffY = rng.Next01() * 1000f;
+
 		float noiseScale = 0.04f;
-		float[] beachWidth = w.beachWidth;
-		for (int y = 0; y < size; y++)
-			for (int x = 0; x < size; x++)
-			{
-				float n = Mathf.PerlinNoise(x * noiseScale + 91.3f, y * noiseScale + 17.7f);
-				beachWidth[y * size + x] = Mathf.Lerp(s.beachWidthMin, s.beachWidthMax, n);
-			}
+		float beachMin = s.beachWidthMin;
+		float beachRange = s.beachWidthMax - beachMin;
 
 		for (int y = 0; y < size; y++)
 		{
@@ -36,7 +36,8 @@ public static class MapBiomesV3
 
 				if (d.land[i] == 1)
 				{
-					float localBeach = beachWidth[i];
+					float n = Mathf.PerlinNoise(x * noiseScale + 91.3f, y * noiseScale + 17.7f);
+					float localBeach = beachMin + n * beachRange;
 					if (cd <= localBeach) d.beach[i] = 1;
 					else if (cd >= s.grassInset) d.grass[i] = 1;
 				}
@@ -48,9 +49,20 @@ public static class MapBiomesV3
 					float shelfB = Mathf.Lerp(1f - shSt, 1f, Mathf.Clamp01(depT * invShelf));
 					dep01 *= shelfB;
 
-					if (dep01 <= shCut) d.oceanBand[i] = 1;
-					else if (dep01 <= medCut) d.oceanBand[i] = 2;
-					else d.oceanBand[i] = 3;
+					byte band;
+					if (dep01 <= shCut) band = 1;
+					else if (dep01 <= medCut) band = 2;
+					else band = 3;
+
+					if (band == 3)
+					{
+						float abyssNoise = Mathf.PerlinNoise(
+							x / abyssScale + abyssOffX,
+							y / abyssScale + abyssOffY);
+						if (abyssNoise >= abyssThresh) band = 4;
+					}
+
+					d.oceanBand[i] = band;
 				}
 			}
 		}

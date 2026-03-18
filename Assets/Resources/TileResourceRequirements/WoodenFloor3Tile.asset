@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e97f9593a1513e4281614191b793cc4, type: 3}
+  m_Name: WoodenFloor3Tile
+  m_EditorClassIdentifier: 
+  tile: {fileID: 11400000, guid: b0a54154ffd81a543adf4bf9d099eb1b, type: 2}
+  altTile: {fileID: 0}
+  pillarTile: {fileID: 11400000, guid: e1a5eaad8fabc064b9621782eb1f525d, type: 2}
+  menuIcon: {fileID: 316224499, guid: 477a5b26f44242c40ac850413b3de411, type: 3}
+  tileCategory: 0
+  resourceRequirements:
+  - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}
+    amount: 2
+  resourcesReturnedOnDestroy:
+  - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}
+    amount: 1

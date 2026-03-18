@@ -25,6 +25,7 @@ public static class MapNoiseV3
 		seaweedOffset = new Vector2(rng.Range(0f, 10000f), rng.Range(0f, 10000f));
 
 		PlaceIslands(d, s, ref rng, w, baseOffset);
+		PrecomputeWarp(d, s, w, baseOffset);
 		RasterizeIslands(d, s, w, baseOffset);
 	}
 
@@ -100,11 +101,38 @@ public static class MapNoiseV3
 			int islandId = w.islandCount++;
 			w.islandCenters[islandId] = new Vector2(px, py);
 			w.islandRadii[islandId] = rng.Range(minR, maxR + 1);
+			w.islandData[islandId] = new IslandInfoV3(px, py, w.islandRadii[islandId]);
 
-			// Assign random biome from available definitions
 			w.islandBiomes[islandId] = (BiomeType)(rng.NextInt(0, biomeCount));
 
 			w.islandGrid[gcy * gw + gcx] = islandId;
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// STEP 1b — Precompute domain warp displacements into flat arrays
+	// Moves 4 Perlin calls out of the per-island inner loop into a
+	// single sequential pass that is cache-friendly. Output is identical.
+	// ------------------------------------------------------------------
+	private static void PrecomputeWarp(MapDataV3 d, MapSettingsV3 s, MapWorkspaceV3 w, Vector2 baseOffset)
+	{
+		int size = d.size;
+		float warpScaleA = Mathf.Max(1f, s.warpScaleA);
+		float warpScaleB = Mathf.Max(1f, s.warpScaleB);
+		float warpAmp = s.warpAmplitude;
+
+		for (int y = 0; y < size; y++)
+		{
+			int row = y * size;
+			for (int x = 0; x < size; x++)
+			{
+				float wx1 = Mathf.PerlinNoise((x / warpScaleA) + baseOffset.x + 11.3f, (y / warpScaleA) + baseOffset.y + 91.7f) * 2f - 1f;
+				float wy1 = Mathf.PerlinNoise((x / warpScaleA) + baseOffset.x + 71.1f, (y / warpScaleA) + baseOffset.y + 19.9f) * 2f - 1f;
+				float wx2 = Mathf.PerlinNoise((x / warpScaleB) + baseOffset.x + 201.2f, (y / warpScaleB) + baseOffset.y + 9.4f) * 2f - 1f;
+				float wy2 = Mathf.PerlinNoise((x / warpScaleB) + baseOffset.x + 7.6f, (y / warpScaleB) + baseOffset.y + 155.8f) * 2f - 1f;
+				w.warpDX[row + x] = (wx1 + wx2) * warpAmp;
+				w.warpDY[row + x] = (wy1 + wy2) * warpAmp;
+			}
 		}
 	}
 
@@ -121,10 +149,7 @@ public static class MapNoiseV3
 		int gh = w.islandGridH;
 		float sharp = Mathf.Max(0.01f, s.islandSharpness);
 
-		float warpScaleA = Mathf.Max(1f, s.warpScaleA);
-		float warpScaleB = Mathf.Max(1f, s.warpScaleB);
 		float warpAmp = s.warpAmplitude;
-
 		float edgeScale = Mathf.Max(0.0001f, s.edgeNoiseScale);
 		float edgeAmp = Mathf.Clamp01(s.edgeNoiseStrength);
 		float ridgeAmp = Mathf.Clamp01(s.ridgeNoiseStrength);
@@ -140,19 +165,17 @@ public static class MapNoiseV3
 		int n = size * size;
 		for (int i = 0; i < n; i++) d.islandId[i] = -1;
 
+		float[] warpDX = w.warpDX;
+		float[] warpDY = w.warpDY;
+
 		for (int y = 0; y < size; y++)
 		{
 			int row = y * size;
 			for (int x = 0; x < size; x++)
 			{
-				// --- Domain warp: two-layer, breaks circular symmetry ---
-				float wx1 = Mathf.PerlinNoise((x / warpScaleA) + baseOffset.x + 11.3f, (y / warpScaleA) + baseOffset.y + 91.7f) * 2f - 1f;
-				float wy1 = Mathf.PerlinNoise((x / warpScaleA) + baseOffset.x + 71.1f, (y / warpScaleA) + baseOffset.y + 19.9f) * 2f - 1f;
-				float wx2 = Mathf.PerlinNoise((x / warpScaleB) + baseOffset.x + 201.2f, (y / warpScaleB) + baseOffset.y + 9.4f) * 2f - 1f;
-				float wy2 = Mathf.PerlinNoise((x / warpScaleB) + baseOffset.x + 7.6f, (y / warpScaleB) + baseOffset.y + 155.8f) * 2f - 1f;
-
-				float sx = x + (wx1 + wx2) * warpAmp;
-				float sy = y + (wy1 + wy2) * warpAmp;
+				int ti = row + x;
+				float sx = x + warpDX[ti];
+				float sy = y + warpDY[ti];
 
 				int gcx = Mathf.Clamp((int)(sx / cell), 0, gw - 1);
 				int gcy = Mathf.Clamp((int)(sy / cell), 0, gh - 1);
@@ -170,11 +193,11 @@ public static class MapNoiseV3
 						int id = w.islandGrid[gRow + xx];
 						if (id < 0) continue;
 
-						Vector2 c = w.islandCenters[id];
-						float r = w.islandRadii[id];
+						IslandInfoV3 isl = w.islandData[id];
+						float r = isl.r;
 
-						float dx = sx - c.x;
-						float dy = sy - c.y;
+						float dx = sx - isl.cx;
+						float dy = sy - isl.cy;
 						float d2 = dx * dx + dy * dy;
 
 						// Directional edge perturbation (non-round coastlines)
@@ -229,6 +252,13 @@ public static class MapNoiseV3
 	{
 		float sx = (float)x / size * s.seaweedScale + seaweedOffset.x;
 		float sy = (float)y / size * s.seaweedScale + seaweedOffset.y;
+		return Mathf.PerlinNoise(sx, sy);
+	}
+
+	public static float SeaweedJitterValue(int x, int y, MapSettingsV3 s, Vector2 seaweedOffset)
+	{
+		float sx = x / s.seaweedJitterScale + seaweedOffset.x + 3141.59f;
+		float sy = y / s.seaweedJitterScale + seaweedOffset.y + 2718.28f;
 		return Mathf.PerlinNoise(sx, sy);
 	}
 }

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public static class MapPainterV3
@@ -10,19 +10,20 @@ public static class MapPainterV3
 	public const int LAYER_LAND = 4;
 	public const int LAYER_GRASS = 5;
 	public const int LAYER_OVERLAY = 6;
-	public const int LAYER_COUNT = 7;
+	public const int LAYER_OCEAN_ABYSS = 7;
+	public const int LAYER_COUNT = 8;
 
 	public static void PaintAll(
 		MapDataV3 d, MapSettingsV3 s,
 		Tilemap waterTilemap, Tilemap landTilemap, Tilemap grassTilemap,
 		Tilemap oceanOverlayTilemap,
-		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep,
+		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep, Tilemap oceanFloorAbyss,
 		MapWorkspaceV3 w)
 	{
 		if (w.chunks == null) return;
 		for (int i = 0; i < w.chunks.Length; i++)
 			PaintChunk(i, d, s, waterTilemap, landTilemap, grassTilemap,
-				oceanOverlayTilemap, oceanFloorShallow, oceanFloorMedium, oceanFloorDeep, w);
+				oceanOverlayTilemap, oceanFloorShallow, oceanFloorMedium, oceanFloorDeep, oceanFloorAbyss, w);
 	}
 
 	public static void PaintChunk(
@@ -30,14 +31,14 @@ public static class MapPainterV3
 		MapDataV3 d, MapSettingsV3 s,
 		Tilemap waterTilemap, Tilemap landTilemap, Tilemap grassTilemap,
 		Tilemap oceanOverlayTilemap,
-		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep,
+		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep, Tilemap oceanFloorAbyss,
 		MapWorkspaceV3 w)
 	{
 		ref MapChunkV3 chunk = ref w.chunks[chunkIndex];
 		if (chunk.isLoaded) return;
 		for (int layer = 0; layer < LAYER_COUNT; layer++)
 			PaintChunkLayer(chunkIndex, layer, d, s, waterTilemap, landTilemap, grassTilemap,
-				oceanOverlayTilemap, oceanFloorShallow, oceanFloorMedium, oceanFloorDeep, w);
+				oceanOverlayTilemap, oceanFloorShallow, oceanFloorMedium, oceanFloorDeep, oceanFloorAbyss, w);
 		chunk.isLoaded = true;
 	}
 
@@ -46,7 +47,7 @@ public static class MapPainterV3
 		MapDataV3 d, MapSettingsV3 s,
 		Tilemap waterTilemap, Tilemap landTilemap, Tilemap grassTilemap,
 		Tilemap oceanOverlayTilemap,
-		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep,
+		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep, Tilemap oceanFloorAbyss,
 		MapWorkspaceV3 w)
 	{
 		ref MapChunkV3 chunk = ref w.chunks[chunkIndex];
@@ -106,16 +107,34 @@ public static class MapPainterV3
 				if (landTilemap == null) break;
 				{
 					TileBase landTile = bdef?.landTile ?? s.oceanFloorShallowTile;
-					for (int dy = 0; dy < height; dy++)
-						for (int dx = 0; dx < width; dx++)
-						{
-							int i = d.Idx(tX + dx, tY + dy);
-							buf[dy * width + dx] = d.land[i] == 1 ? landTile : null;
-						}
-					landTilemap.SetTilesBlock(bounds, buf);
-					if (bdef != null && bdef.landColor != Color.white)
-						ApplyColor(landTilemap, d, chunkOrigin, tX, tY, width, height,
-							d.land, 1, bdef.landColor);
+					Color landColor = bdef != null ? bdef.landColor : Color.white;
+					if (landColor != Color.white)
+					{
+						w.EnsureTileChangeBuffer(count);
+						TileChangeData[] tcd = w.tileChangeBuffer;
+						for (int dy = 0; dy < height; dy++)
+							for (int dx = 0; dx < width; dx++)
+							{
+								int i = d.Idx(tX + dx, tY + dy);
+								bool isLand = d.land[i] == 1;
+								tcd[dy * width + dx] = new TileChangeData(
+									chunkOrigin + new Vector3Int(dx, dy, 0),
+									isLand ? landTile : null,
+									isLand ? landColor : Color.white,
+									Matrix4x4.identity);
+							}
+						landTilemap.SetTiles(tcd, false);
+					}
+					else
+					{
+						for (int dy = 0; dy < height; dy++)
+							for (int dx = 0; dx < width; dx++)
+							{
+								int i = d.Idx(tX + dx, tY + dy);
+								buf[dy * width + dx] = d.land[i] == 1 ? landTile : null;
+							}
+						landTilemap.SetTilesBlock(bounds, buf);
+					}
 				}
 				break;
 
@@ -123,16 +142,34 @@ public static class MapPainterV3
 				if (grassTilemap == null) break;
 				{
 					TileBase grassTile = bdef?.grassTile;
-					for (int dy = 0; dy < height; dy++)
-						for (int dx = 0; dx < width; dx++)
-						{
-							int i = d.Idx(tX + dx, tY + dy);
-							buf[dy * width + dx] = d.grass[i] == 1 ? grassTile : null;
-						}
-					grassTilemap.SetTilesBlock(bounds, buf);
-					if (bdef != null && bdef.grassColor != Color.white)
-						ApplyColor(grassTilemap, d, chunkOrigin, tX, tY, width, height,
-							d.grass, 1, bdef.grassColor);
+					Color grassColor = bdef != null ? bdef.grassColor : Color.white;
+					if (grassColor != Color.white)
+					{
+						w.EnsureTileChangeBuffer(count);
+						TileChangeData[] tcd = w.tileChangeBuffer;
+						for (int dy = 0; dy < height; dy++)
+							for (int dx = 0; dx < width; dx++)
+							{
+								int i = d.Idx(tX + dx, tY + dy);
+								bool isGrass = d.grass[i] == 1;
+								tcd[dy * width + dx] = new TileChangeData(
+									chunkOrigin + new Vector3Int(dx, dy, 0),
+									isGrass ? grassTile : null,
+									isGrass ? grassColor : Color.white,
+									Matrix4x4.identity);
+							}
+						grassTilemap.SetTiles(tcd, false);
+					}
+					else
+					{
+						for (int dy = 0; dy < height; dy++)
+							for (int dx = 0; dx < width; dx++)
+							{
+								int i = d.Idx(tX + dx, tY + dy);
+								buf[dy * width + dx] = d.grass[i] == 1 ? grassTile : null;
+							}
+						grassTilemap.SetTilesBlock(bounds, buf);
+					}
 				}
 				break;
 
@@ -146,6 +183,18 @@ public static class MapPainterV3
 					}
 				oceanOverlayTilemap.SetTilesBlock(bounds, buf);
 				break;
+
+			case LAYER_OCEAN_ABYSS:
+				if (oceanFloorAbyss == null || s.oceanFloorAbyssTile == null) break;
+				for (int dy = 0; dy < height; dy++)
+					for (int dx = 0; dx < width; dx++)
+					{
+						int i = d.Idx(tX + dx, tY + dy);
+						buf[dy * width + dx] = (d.land[i] == 0 && d.oceanBand[i] == 4)
+							? s.oceanFloorAbyssTile : null;
+					}
+				oceanFloorAbyss.SetTilesBlock(bounds, buf);
+				break;
 		}
 	}
 
@@ -154,7 +203,7 @@ public static class MapPainterV3
 		MapDataV3 d, MapSettingsV3 s,
 		Tilemap waterTilemap, Tilemap landTilemap, Tilemap grassTilemap,
 		Tilemap oceanOverlayTilemap,
-		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep,
+		Tilemap oceanFloorShallow, Tilemap oceanFloorMedium, Tilemap oceanFloorDeep, Tilemap oceanFloorAbyss,
 		MapWorkspaceV3 w)
 	{
 		ref MapChunkV3 chunk = ref w.chunks[chunkIndex];
@@ -179,6 +228,7 @@ public static class MapPainterV3
 		oceanFloorShallow?.SetTilesBlock(bounds, buf);
 		oceanFloorMedium?.SetTilesBlock(bounds, buf);
 		oceanFloorDeep?.SetTilesBlock(bounds, buf);
+		oceanFloorAbyss?.SetTilesBlock(bounds, buf);
 		ClearChunkWater(d, waterTilemap, ref chunk, w);
 
 		chunk.isLoaded = false;
@@ -267,16 +317,4 @@ public static class MapPainterV3
 		waterTilemap.SetTilesBlock(new BoundsInt(chunkOrigin, new Vector3Int(width, height, 1)), buf);
 	}
 
-	private static void ApplyColor(Tilemap tm, MapDataV3 d, Vector3Int origin,
-		int tX, int tY, int width, int height,
-		byte[] mask, byte matchVal, Color color)
-	{
-		for (int dy = 0; dy < height; dy++)
-			for (int dx = 0; dx < width; dx++)
-			{
-				int i = d.Idx(tX + dx, tY + dy);
-				if (mask[i] == matchVal)
-					tm.SetColor(origin + new Vector3Int(dx, dy, 0), color);
-			}
-	}
 }

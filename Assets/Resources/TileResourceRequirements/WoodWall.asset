@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: WoodWall
   m_EditorClassIdentifier: 
   tile: {fileID: 11400000, guid: d8c5c0efb29cb5c48a689c484fa2a952, type: 2}
+  altTile: {fileID: 0}
   pillarTile: {fileID: 0}
+  menuIcon: {fileID: -8255767422996271102, guid: a0410356c56d40d44a87aa71e508869f, type: 3}
   tileCategory: 1
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}

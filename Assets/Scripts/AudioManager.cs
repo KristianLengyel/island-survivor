@@ -28,10 +28,13 @@ public class AudioManager : MonoBehaviour
 	private Coroutine fadeCoroutine;
 	private Coroutine indoorFadeCoroutine;
 
+	[SerializeField] private AudioSource oceanAmbientSource;
+
 	private AudioSource ambientSource;
 	public AudioSource effectsSource;
 
 	private float baseAmbientVolume = 1f;
+	private float baseOceanVolume;
 	private float indoorVolumeMult = 1f;
 
 	private void Awake()
@@ -76,6 +79,9 @@ public class AudioManager : MonoBehaviour
 		{
 			soundDictionary[sound.name] = sound;
 		}
+
+		if (oceanAmbientSource != null)
+			baseOceanVolume = oceanAmbientSource.volume;
 	}
 
 	public void PlaySound(string name, float customPitch = -1f)
@@ -156,16 +162,23 @@ public class AudioManager : MonoBehaviour
 	private IEnumerator FadeIndoorVolume(float targetVolume, float duration)
 	{
 		float startVolume = ambientSource.volume;
+		float startOceanVolume = oceanAmbientSource != null ? oceanAmbientSource.volume : 0f;
+		float targetOceanVolume = baseOceanVolume * indoorVolumeMult;
 		float timeElapsed = 0f;
 
 		while (timeElapsed < duration)
 		{
-			ambientSource.volume = Mathf.Lerp(startVolume, targetVolume, timeElapsed / duration);
+			float t = timeElapsed / duration;
+			ambientSource.volume = Mathf.Lerp(startVolume, targetVolume, t);
+			if (oceanAmbientSource != null)
+				oceanAmbientSource.volume = Mathf.Lerp(startOceanVolume, targetOceanVolume, t);
 			timeElapsed += Time.deltaTime;
 			yield return null;
 		}
 
 		ambientSource.volume = targetVolume;
+		if (oceanAmbientSource != null)
+			oceanAmbientSource.volume = targetOceanVolume;
 		indoorFadeCoroutine = null;
 	}
 
