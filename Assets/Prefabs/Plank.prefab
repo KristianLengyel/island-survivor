@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7878693416327886242
+--- !u!1 &8174839025534845226
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,8 +8,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 149780860459769011}
-  - component: {fileID: 6199744181543604028}
+  - component: {fileID: 6032268145169754590}
+  - component: {fileID: 670047185967739983}
   m_Layer: 0
   m_Name: Outline
   m_TagString: Untagged
@@ -17,29 +17,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!4 &149780860459769011
+--- !u!4 &6032268145169754590
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7878693416327886242}
+  m_GameObject: {fileID: 8174839025534845226}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9010848882022315033}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &6199744181543604028
+--- !u!212 &670047185967739983
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7878693416327886242}
+  m_GameObject: {fileID: 8174839025534845226}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -126,7 +126,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 149780860459769011}
+  - {fileID: 6032268145169754590}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4427629358684902303
@@ -155,7 +155,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 84a3d6e896ea4714492dbd6d75b9655b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -276,6 +276,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollectablePickup
   interactionRange: 2
+  useLootTable: 0
 --- !u!114 &-4362414843474877493
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288,5 +289,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cdaf322b73aaa042a7ace768ab1f07c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Highlightable
-  outlineRenderers:
-  - {fileID: 6199744181543604028}
+  renderers:
+  - {fileID: 670047185967739983}

@@ -136,18 +136,7 @@ public class Planter : MonoBehaviour, IInteractable, ISaveableComponent
 		if (spriteRenderer == null)
 			spriteRenderer = GetComponent<SpriteRenderer>();
 
-		if (outlineRenderer == null)
-		{
-			outlineChild = transform.Find("Outline")?.gameObject;
-			if (outlineChild != null) outlineRenderer = outlineChild.GetComponent<SpriteRenderer>();
-		}
-		else
-		{
-			outlineChild = outlineRenderer.gameObject;
-		}
-
-		if (outlineChild != null && !outlineChild.activeSelf) outlineChild.SetActive(true);
-		if (outlineRenderer != null) outlineRenderer.enabled = false;
+		InteractableUtil.ResolveOutlineRenderer(transform, ref outlineRenderer, out outlineChild);
 
 		if (cropOverlayRenderer == null)
 		{
@@ -290,7 +279,7 @@ public class Planter : MonoBehaviour, IInteractable, ISaveableComponent
 
 		bool canHighlight = isMature || (selectedItem != null && (
 			(!isPlanted && plantableSet != null && plantableSet.Contains(selectedItem.name)) ||
-			(!isWet && (selectedItem.name == "Cup" || selectedItem.name == "Water Bottle" || selectedItem.name == "Canteen") &&
+			(!isWet && (selectedItem.name == ItemNames.Cup || selectedItem.name == ItemNames.WaterBottle || selectedItem.name == ItemNames.Canteen) &&
 			 slotItem != null && slotItem.currentFill > 0 && !slotItem.isSaltWater)
 		));
 
@@ -318,7 +307,7 @@ public class Planter : MonoBehaviour, IInteractable, ISaveableComponent
 			return;
 		}
 
-		if (!isWet && (selectedItem.name == "Cup" || selectedItem.name == "Water Bottle" || selectedItem.name == "Canteen"))
+		if (!isWet && (selectedItem.name == ItemNames.Cup || selectedItem.name == ItemNames.WaterBottle || selectedItem.name == ItemNames.Canteen))
 		{
 			if (slotItem != null && slotItem.currentFill > 0 && !slotItem.isSaltWater)
 			{
@@ -333,11 +322,7 @@ public class Planter : MonoBehaviour, IInteractable, ISaveableComponent
 
 	public bool IsMouseOverSprite(Vector2 mouseWorldPos)
 	{
-		if (spriteRenderer == null || spriteRenderer.sprite == null) return false;
-
-		var b = spriteRenderer.bounds;
-		return mouseWorldPos.x >= b.min.x && mouseWorldPos.x <= b.max.x &&
-			   mouseWorldPos.y >= b.min.y && mouseWorldPos.y <= b.max.y;
+		return InteractableUtil.IsMouseOverBounds(spriteRenderer, mouseWorldPos);
 	}
 
 	public string SaveKey => "Planter";

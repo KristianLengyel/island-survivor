@@ -51,35 +51,7 @@ public class WaterBarrelController : MonoBehaviour, IInteractable, ISaveableComp
 		inventoryManager = GameManager.Instance?.InventoryManager;
 		weatherManager = FindFirstObjectByType<WeatherManager>();
 
-		if (outlineRenderer == null)
-		{
-			outlineChild = transform.Find("Outline")?.gameObject;
-			if (outlineChild != null)
-			{
-				outlineRenderer = outlineChild.GetComponent<SpriteRenderer>();
-				if (outlineRenderer == null)
-				{
-					Debug.LogError("WaterBarrelController: No SpriteRenderer found on Outline child!");
-				}
-			}
-			else
-			{
-				Debug.LogError("WaterBarrelController: No Outline child found!");
-			}
-		}
-		else
-		{
-			outlineChild = outlineRenderer.gameObject;
-		}
-
-		if (outlineChild != null && !outlineChild.activeSelf)
-		{
-			outlineChild.SetActive(true);
-			Debug.Log("WaterBarrelController: Outline child was inactive and has been activated.");
-		}
-
-		if (outlineRenderer != null)
-			outlineRenderer.enabled = false;
+		InteractableUtil.ResolveOutlineRenderer(transform, ref outlineRenderer, out outlineChild);
 
 		initialized = true;
 	}
@@ -193,9 +165,9 @@ public class WaterBarrelController : MonoBehaviour, IInteractable, ISaveableComp
 		Item selectedItem = inventoryManager?.GetSelectedItem();
 		bool isFillableItem = selectedItem != null &&
 							  currentFills > 0 &&
-							  (selectedItem.name == "Cup" ||
-							   selectedItem.name == "Water Bottle" ||
-							   selectedItem.name == "Canteen");
+							  (selectedItem.name == ItemNames.Cup ||
+							   selectedItem.name == ItemNames.WaterBottle ||
+							   selectedItem.name == ItemNames.Canteen);
 
 		outlineRenderer.enabled = highlight && isFillableItem;
 	}
@@ -210,7 +182,7 @@ public class WaterBarrelController : MonoBehaviour, IInteractable, ISaveableComp
 		Item selectedItem = inventoryManager.GetSelectedItem();
 		if (selectedItem == null) return;
 
-		if (selectedItem.name != "Cup" && selectedItem.name != "Water Bottle" && selectedItem.name != "Canteen")
+		if (selectedItem.name != ItemNames.Cup && selectedItem.name != ItemNames.WaterBottle && selectedItem.name != ItemNames.Canteen)
 			return;
 
 		if (inventoryManager.inventorySlots == null) return;
@@ -251,14 +223,7 @@ public class WaterBarrelController : MonoBehaviour, IInteractable, ISaveableComp
 
 	public bool IsMouseOverSprite(Vector2 mouseWorldPos)
 	{
-		if (spriteRenderer == null || spriteRenderer.sprite == null) return false;
-
-		Bounds spriteBounds = spriteRenderer.bounds;
-		Vector2 spriteMin = spriteBounds.min;
-		Vector2 spriteMax = spriteBounds.max;
-
-		return mouseWorldPos.x >= spriteMin.x && mouseWorldPos.x <= spriteMax.x &&
-			   mouseWorldPos.y >= spriteMin.y && mouseWorldPos.y <= spriteMax.y;
+		return InteractableUtil.IsMouseOverBounds(spriteRenderer, mouseWorldPos);
 	}
 
 	public string SaveKey => "WaterBarrel";

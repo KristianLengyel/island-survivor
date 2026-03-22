@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e97f9593a1513e4281614191b793cc4, type: 3}
   m_Name: StoneTile
   m_EditorClassIdentifier: 
+  tileName: Stone Foundation
   tile: {fileID: 11400000, guid: f000c49e801ac1b43a2e274f1ea8cb2a, type: 2}
   altTile: {fileID: 0}
   pillarTile: {fileID: 11400000, guid: d05528465249c4c48b0d8b97b545e449, type: 2}

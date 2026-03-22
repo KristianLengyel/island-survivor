@@ -487,5 +487,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cdaf322b73aaa042a7ace768ab1f07c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Highlightable
-  outlineRenderers:
+  renderers:
   - {fileID: 7998918227749262162}

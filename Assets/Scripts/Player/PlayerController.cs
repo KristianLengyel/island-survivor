@@ -98,6 +98,7 @@ public class PlayerController : MonoBehaviour
 		{
 			inputController.SetBlocked();
 			animationDriver.Tick();
+			carryController.Tick();
 			itemUseController.ClearIndicator();
 			interactionController.ClearHighlight();
 			return;
@@ -105,6 +106,7 @@ public class PlayerController : MonoBehaviour
 
 		inputController.Tick();
 		animationDriver.Tick();
+		carryController.Tick();
 		TickWeatherDebug();
 		interactionController.Tick();
 		itemUseController.Tick();

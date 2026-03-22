@@ -116,14 +116,7 @@ public class CatchingNet : MonoBehaviour, IInteractable, ISaveableComponent
 
 	public bool IsMouseOverSprite(Vector2 mouseWorldPos)
 	{
-		if (spriteRenderer == null || spriteRenderer.sprite == null) return false;
-
-		Bounds spriteBounds = spriteRenderer.bounds;
-		Vector2 spriteMin = spriteBounds.min;
-		Vector2 spriteMax = spriteBounds.max;
-
-		return mouseWorldPos.x >= spriteMin.x && mouseWorldPos.x <= spriteMax.x &&
-			   mouseWorldPos.y >= spriteMin.y && mouseWorldPos.y <= spriteMax.y;
+		return InteractableUtil.IsMouseOverBounds(spriteRenderer, mouseWorldPos);
 	}
 
 	// --- ISaveableComponent ---

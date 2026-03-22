@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -8,6 +9,7 @@ public class FishManager : MonoBehaviour
 	public Transform player;
 	public Tilemap waterTilemap;
 	public TileBase waterTile;
+	public MapGeneratorV3 mapGenerator;
 
 	[Header("Fish Settings")]
 	public GameObject fishPrefab;
@@ -23,9 +25,26 @@ public class FishManager : MonoBehaviour
 	public bool showGizmos = true;
 
 	private List<GameObject> spawnedFish = new List<GameObject>();
+	private bool ready;
 
-	void Start()
+	IEnumerator Start()
 	{
+		if (mapGenerator == null)
+			mapGenerator = FindAnyObjectByType<MapGeneratorV3>();
+
+		if (mapGenerator != null)
+		{
+			while (mapGenerator.IsGenerating)
+				yield return null;
+		}
+
+		Vector3Int playerCell = waterTilemap.WorldToCell(player.position);
+		while (!waterTilemap.HasTile(playerCell))
+		{
+			yield return null;
+			playerCell = waterTilemap.WorldToCell(player.position);
+		}
+
 		if (fishParent == null)
 		{
 			GameObject parentObj = new GameObject("FishParent");
@@ -33,14 +52,22 @@ public class FishManager : MonoBehaviour
 		}
 
 		SpawnFishAroundPlayer();
+		ready = true;
 	}
 
 	void Update()
 	{
+		if (!ready) return;
+
 		for (int i = 0; i < spawnedFish.Count; i++)
 		{
 			if (!spawnedFish[i])
+			{
+				spawnedFish.RemoveAt(i);
+				i--;
+				SpawnOneFishNearPlayer();
 				continue;
+			}
 
 			float dist = Vector2.Distance(player.position, spawnedFish[i].transform.position);
 			if (dist > maxDistanceFromPlayer)
@@ -48,7 +75,6 @@ public class FishManager : MonoBehaviour
 				Destroy(spawnedFish[i]);
 				spawnedFish.RemoveAt(i);
 				i--;
-
 				SpawnOneFishNearPlayer();
 			}
 		}
@@ -69,8 +95,7 @@ public class FishManager : MonoBehaviour
 				GameObject fishGO = Instantiate(fishPrefab, worldPos, Quaternion.identity, fishParent);
 
 				FishController fishCtrl = fishGO.GetComponent<FishController>();
-
-				fishCtrl.Init(waterTilemap, waterTile);
+				fishCtrl.Init(waterTilemap, waterTile, player);
 
 				spawnedFish.Add(fishGO);
 				spawned++;
@@ -91,7 +116,7 @@ public class FishManager : MonoBehaviour
 				GameObject fishGO = Instantiate(fishPrefab, worldPos, Quaternion.identity, fishParent);
 
 				FishController fishCtrl = fishGO.GetComponent<FishController>();
-				fishCtrl.Init(waterTilemap, waterTile);
+				fishCtrl.Init(waterTilemap, waterTile, player);
 
 				spawnedFish.Add(fishGO);
 				break;

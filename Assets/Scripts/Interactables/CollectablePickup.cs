@@ -61,9 +61,6 @@ public class CollectablePickup : MonoBehaviour, IInteractable
 
 	public bool IsMouseOverSprite(Vector2 mouseWorldPos)
 	{
-		if (_spriteRenderer == null) return false;
-		var b = _spriteRenderer.bounds;
-		return mouseWorldPos.x >= b.min.x && mouseWorldPos.x <= b.max.x &&
-			   mouseWorldPos.y >= b.min.y && mouseWorldPos.y <= b.max.y;
+		return InteractableUtil.IsMouseOverBounds(_spriteRenderer, mouseWorldPos);
 	}
 }

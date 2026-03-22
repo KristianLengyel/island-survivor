@@ -1,14 +1,15 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/StatBars/StatBars.uss?fileID=7433441132597879392&amp;guid=9f1c8dfd45eb74b4799b24a8f4b321ce&amp;type=3#StatBars"/>
-    <ui:VisualElement name="StatBarsRoot" class="statBarsRoot">
-        <ui:VisualElement name="HungerFrame" class="statBarFrame hungerFrame">
-            <ui:VisualElement class="statBarTrack hungerTrack">
-                <ui:VisualElement name="HungerFill" class="statBarFill hungerFill"/>
+    <ui:VisualElement name="stat-bars-root" class="stat-bars-root">
+        <ui:VisualElement name="hunger-frame" class="stat-bar-frame">
+            <ui:VisualElement name="hunger-track" class="stat-bar-track hunger-track">
+                <ui:VisualElement name="hunger-fill" class="stat-bar-fill hunger-fill"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="ThirstFrame" class="statBarFrame">
-            <ui:VisualElement class="statBarTrack thirstTrack">
-                <ui:VisualElement name="ThirstFill" class="statBarFill thirstFill"/>
+
+        <ui:VisualElement name="thirst-frame" class="stat-bar-frame">
+            <ui:VisualElement name="thirst-track" class="stat-bar-track thirst-track">
+                <ui:VisualElement name="thirst-fill" class="stat-bar-fill thirst-fill"/>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

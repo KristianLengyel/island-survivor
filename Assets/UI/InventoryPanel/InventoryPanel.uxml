@@ -1,0 +1,36 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="InventoryPanel.uss"/>
+    <ui:VisualElement name="inventory-root" class="inv-overlay">
+        <ui:VisualElement class="inv-panels-row">
+
+            <ui:VisualElement class="inv-panel-wrapper">
+                <ui:VisualElement class="inv-panel">
+                    <ui:VisualElement name="inv-slot-container" class="inv-slot-grid"/>
+                </ui:VisualElement>
+                <ui:Label text="inventory" class="inv-panel-title"/>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="craft-panel-wrapper">
+                <ui:VisualElement class="craft-panel">
+                    <ui:VisualElement class="craft-left-section">
+                        <ui:Label text="recipes" class="craft-section-label"/>
+                        <ui:VisualElement name="craft-slot-container" class="craft-slot-grid"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="craft-right-section">
+                        <ui:VisualElement name="craft-preview-icon" class="craft-preview-frame">
+                            <ui:VisualElement class="craft-preview-inner"/>
+                        </ui:VisualElement>
+                        <ui:Label text="" name="craft-result-name" class="craft-result-name"/>
+                        <ui:Label text="requires" name="craft-requires-label" class="craft-requires-label"/>
+                        <ui:VisualElement name="craft-ingredients-container" class="craft-ingredients-container"/>
+                        <ui:Button name="craft-button" class="craft-button">
+                            <ui:Label text="craft" class="craft-button-label"/>
+                        </ui:Button>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label text="craft" class="inv-panel-title"/>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e97f9593a1513e4281614191b793cc4, type: 3}
   m_Name: WoodWall
   m_EditorClassIdentifier: 
+  tileName: Wooden Wall
   tile: {fileID: 11400000, guid: d8c5c0efb29cb5c48a689c484fa2a952, type: 2}
   altTile: {fileID: 0}
   pillarTile: {fileID: 0}

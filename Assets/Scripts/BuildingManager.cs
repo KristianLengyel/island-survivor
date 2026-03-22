@@ -109,7 +109,9 @@ public class BuildingManager : MonoBehaviour
 		return req?.pillarTile;
 	}
 
-	private TileResourceRequirement GetRequirement(TileBase tile)
+	public List<TileResourceRequirement> GetAllTileRequirements() => tileResourceRequirements;
+
+	public TileResourceRequirement GetRequirement(TileBase tile)
 	{
 		if (tile == null) return null;
 		requirementsDict.TryGetValue(tile, out var req);

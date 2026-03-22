@@ -7,7 +7,20 @@
       "Write",
       "WebFetch",
       "Glob",
-      "Grep"
+      "Grep",
+      "mcp__trello__list_boards",
+      "mcp__trello__set_active_board",
+      "mcp__trello__get_lists",
+      "mcp__trello__get_cards_by_list_id",
+      "mcp__trello__move_card",
+      "mcp__trello__add_card_to_list",
+      "mcp__trello__add_list_to_board",
+      "mcp__trello__create_label",
+      "mcp__trello__archive_list",
+      "mcp__trello__archive_card",
+      "mcp__trello__assign_member_to_card",
+      "mcp__trello__update_card_details",
+      "WebSearch"
     ]
   }
 }

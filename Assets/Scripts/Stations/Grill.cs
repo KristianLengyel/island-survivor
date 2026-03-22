@@ -100,18 +100,7 @@ public class Grill : MonoBehaviour, IInteractable, ISaveableComponent
 			foodOverlayRenderer.sortingOrder = spriteRenderer.sortingOrder + 1;
 		}
 
-		if (outlineRenderer == null)
-		{
-			outlineChild = transform.Find("Outline")?.gameObject;
-			if (outlineChild != null) outlineRenderer = outlineChild.GetComponent<SpriteRenderer>();
-		}
-		else
-		{
-			outlineChild = outlineRenderer.gameObject;
-		}
-
-		if (outlineChild != null && !outlineChild.activeSelf) outlineChild.SetActive(true);
-		if (outlineRenderer != null) outlineRenderer.enabled = false;
+		InteractableUtil.ResolveOutlineRenderer(transform, ref outlineRenderer, out outlineChild);
 
 		cookingAudioSource.loop = true;
 		cookingAudioSource.Stop();
@@ -440,11 +429,7 @@ public class Grill : MonoBehaviour, IInteractable, ISaveableComponent
 
 	public bool IsMouseOverSprite(Vector2 mouseWorldPos)
 	{
-		if (spriteRenderer == null || spriteRenderer.sprite == null) return false;
-
-		Bounds b = spriteRenderer.bounds;
-		return mouseWorldPos.x >= b.min.x && mouseWorldPos.x <= b.max.x &&
-			   mouseWorldPos.y >= b.min.y && mouseWorldPos.y <= b.max.y;
+		return InteractableUtil.IsMouseOverBounds(spriteRenderer, mouseWorldPos);
 	}
 
 	private void ApplyRestoredVisuals()

@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="BuildingMenu.uss"/>
+    <ui:VisualElement name="build-menu-overlay" class="build-overlay">
+        <ui:VisualElement class="build-menu-wrapper">
+            <ui:VisualElement name="build-menu-panel" class="build-panel">
+                <ui:VisualElement class="build-left-section">
+                    <ui:Label text="Select" class="build-section-label"/>
+                    <ui:VisualElement name="build-btn-container" class="build-btn-container"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="build-right-section">
+                    <ui:VisualElement class="build-preview-frame">
+                        <ui:VisualElement name="build-preview-icon" class="build-preview-icon"/>
+                    </ui:VisualElement>
+                    <ui:Label text="" name="build-tile-type" class="build-tile-type"/>
+                    <ui:VisualElement class="build-cost-section">
+                        <ui:Label text="Cost" class="build-cost-title"/>
+                        <ui:VisualElement name="build-cost-row" class="build-cost-row"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label text="Building Menu" name="build-menu-title" class="build-menu-title"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

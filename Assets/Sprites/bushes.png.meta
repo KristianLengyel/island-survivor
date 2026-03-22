@@ -104,7 +104,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
+        y: 2
         width: 16
         height: 16
       alignment: 0
@@ -126,7 +126,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 16
-        y: 0
+        y: 2
         width: 16
         height: 16
       alignment: 0
@@ -148,7 +148,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 32
-        y: 0
+        y: 2
         width: 16
         height: 16
       alignment: 0
@@ -170,7 +170,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 48
-        y: 0
+        y: 2
         width: 16
         height: 16
       alignment: 0
@@ -192,7 +192,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 64
-        y: 0
+        y: 2
         width: 16
         height: 16
       alignment: 0
@@ -214,7 +214,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 80
-        y: 0
+        y: 2
         width: 16
         height: 16
       alignment: 0
@@ -227,6 +227,50 @@ TextureImporter:
       bones: []
       spriteID: 377aa0c8493b3d04a8eae6f595c4d5c4
       internalID: 1785564624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bushes_shadow
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 2
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f62968e62b2a2df439bdbcb7b486bfaa
+      internalID: 1835344829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bushes_0
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 2
+        width: 18
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 50629517f31a9eb4796312271f2bdeae
+      internalID: 1546149068
       vertices: []
       indices: 
       edges: []
@@ -253,6 +297,8 @@ TextureImporter:
       bush_berries_red: -1952223854
       bush_dead: 1785564624
       bush_normal: -1366677981984774684
+      bushes_0: 1546149068
+      bushes_shadow: 1835344829
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

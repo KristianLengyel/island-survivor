@@ -5,24 +5,36 @@ using UnityEngine.Tilemaps;
 public class FishController : MonoBehaviour
 {
 	public float maxSpeed = 2f;
+	public float fleeSpeed = 4f;
 	public float acceleration = 2f;
 	public float waypointRadius = 1f;
 	public float roamRadius = 5f;
-
-	private Tilemap waterTilemap;
-	private TileBase waterTile;
+	public float fleeRadius = 3f;
+	public float idleMinDuration = 0.5f;
+	public float idleMaxDuration = 2f;
 
 	public int maxTileCheckAttempts = 10;
 
-	Rigidbody2D rb;
-	Vector2 currentWaypoint;
-	bool hasWaypoint;
-	bool facingRight = true;
+	private Tilemap waterTilemap;
+	private TileBase waterTile;
+	private Transform player;
 
-	public void Init(Tilemap map, TileBase tile)
+	private Rigidbody2D rb;
+	private Vector2 currentWaypoint;
+	private bool hasWaypoint;
+	private bool facingRight = false;
+	private bool initialized;
+	private bool isIdle;
+	private float idleTimer;
+	private float activeSpeed;
+
+	public void Init(Tilemap map, TileBase tile, Transform playerTransform)
 	{
 		waterTilemap = map;
 		waterTile = tile;
+		player = playerTransform;
+		activeSpeed = maxSpeed;
+		initialized = true;
 	}
 
 	void Awake()
@@ -33,17 +45,54 @@ public class FishController : MonoBehaviour
 
 	void Update()
 	{
-		float dist = Vector2.Distance(transform.position, currentWaypoint);
+		if (!initialized) return;
+
+		bool playerNear = player != null && Vector2.Distance(transform.position, player.position) < fleeRadius;
+
+		if (playerNear)
+		{
+			isIdle = false;
+			activeSpeed = fleeSpeed;
+			float fleeDist = hasWaypoint ? Vector2.Distance(transform.position, currentWaypoint) : 0f;
+			if (!hasWaypoint || fleeDist < waypointRadius)
+				PickFleeWaypoint();
+			return;
+		}
+
+		activeSpeed = maxSpeed;
+
+		if (isIdle)
+		{
+			idleTimer -= Time.deltaTime;
+			if (idleTimer <= 0f)
+			{
+				isIdle = false;
+				PickNewWaypointInWater();
+			}
+			return;
+		}
+
+		float dist = hasWaypoint ? Vector2.Distance(transform.position, currentWaypoint) : 0f;
 		if (!hasWaypoint || dist < waypointRadius)
 		{
-			PickNewWaypointInWater();
+			hasWaypoint = false;
+			isIdle = true;
+			idleTimer = Random.Range(idleMinDuration, idleMaxDuration);
 		}
 	}
 
 	void FixedUpdate()
 	{
+		if (!initialized) return;
+
+		if (isIdle || !hasWaypoint)
+		{
+			rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, Vector2.zero, acceleration * Time.fixedDeltaTime);
+			return;
+		}
+
 		Vector2 dir = (currentWaypoint - (Vector2)transform.position).normalized;
-		Vector2 desiredVel = dir * maxSpeed;
+		Vector2 desiredVel = dir * activeSpeed;
 		Vector2 steering = desiredVel - rb.linearVelocity;
 		float maxSteer = acceleration * Time.fixedDeltaTime;
 		if (steering.magnitude > maxSteer)
@@ -53,20 +102,13 @@ public class FishController : MonoBehaviour
 
 		if (Mathf.Abs(rb.linearVelocity.x) > 0.01f)
 		{
-			if (rb.linearVelocity.x < 0f && !facingRight)
-			{
-				Flip();
-			}
-			else if (rb.linearVelocity.x > 0f && facingRight)
-			{
-				Flip();
-			}
+			if (rb.linearVelocity.x < 0f && facingRight) Flip();
+			else if (rb.linearVelocity.x > 0f && !facingRight) Flip();
 		}
 	}
 
 	void PickNewWaypointInWater()
 	{
-		bool found = false;
 		Vector2 fishPos = transform.position;
 
 		for (int i = 0; i < maxTileCheckAttempts; i++)
@@ -81,15 +123,38 @@ public class FishController : MonoBehaviour
 			{
 				currentWaypoint = possiblePos;
 				hasWaypoint = true;
-				found = true;
-				break;
+				return;
 			}
 		}
 
-		if (!found)
+		hasWaypoint = false;
+	}
+
+	void PickFleeWaypoint()
+	{
+		if (player == null) return;
+
+		Vector2 fishPos = transform.position;
+		Vector2 awayDir = ((Vector2)transform.position - (Vector2)player.position).normalized;
+
+		for (int i = 0; i < maxTileCheckAttempts; i++)
 		{
-			hasWaypoint = false;
+			float angle = Random.Range(-60f, 60f);
+			Vector2 jitteredDir = Quaternion.Euler(0f, 0f, angle) * awayDir;
+			Vector2 possiblePos = fishPos + jitteredDir * roamRadius;
+
+			Vector3Int cellPos = waterTilemap.WorldToCell(possiblePos);
+			TileBase tile = waterTilemap.GetTile(cellPos);
+
+			if (tile != null && tile == waterTile)
+			{
+				currentWaypoint = possiblePos;
+				hasWaypoint = true;
+				return;
+			}
 		}
+
+		PickNewWaypointInWater();
 	}
 
 	void Flip()

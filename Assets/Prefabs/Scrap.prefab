@@ -276,6 +276,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollectablePickup
   interactionRange: 2
+  useLootTable: 0
 --- !u!114 &3021601849094083297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288,5 +289,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cdaf322b73aaa042a7ace768ab1f07c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Highlightable
-  outlineRenderers:
+  renderers:
   - {fileID: 2179889642208622141}

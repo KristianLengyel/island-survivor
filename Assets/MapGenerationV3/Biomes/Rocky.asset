@@ -14,17 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BiomeDefinitionV3
   biomeType: 4
   biomeName: Rocky
-  landTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
-  grassTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  landTile: {fileID: 11400000, guid: d2cbaa7e2d3ae2549b756a34888c163e, type: 2}
+  grassTile: {fileID: 11400000, guid: d2cbaa7e2d3ae2549b756a34888c163e, type: 2}
   landVariants: []
   grassVariants: []
-  palmPrefab: {fileID: 0}
-  palmSpawnChance: 0.65
-  palmMinDistance: 6
-  palmCoastMin: 3
-  palmCoastMax: 28
-  rockPrefab: {fileID: 7779434712979294630, guid: eefd962e81f15d143bc56a416c79144f, type: 3}
-  rockSpawnChance: 0.1
-  seaweedDensityMultiplier: 1
-  landColor: {r: 0.6981132, g: 0.6336698, b: 0.5782485, a: 1}
-  grassColor: {r: 0.4490565, g: 0.4003153, b: 0.35839793, a: 1}
+  decorators: []
+  seaweedDensityMultiplier: 0.457
+  landColor: {r: 1, g: 1, b: 1, a: 1}
+  grassColor: {r: 0.690566, g: 0.690566, b: 0.690566, a: 1}
+  mapLandColor: {r: 0.5019608, g: 0.58431375, b: 0.5882353, a: 1}
+  mapGrassColor: {r: 0.33333334, g: 0.43529415, b: 0.47058827, a: 1}

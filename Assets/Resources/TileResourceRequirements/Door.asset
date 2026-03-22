@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e97f9593a1513e4281614191b793cc4, type: 3}
   m_Name: Door
   m_EditorClassIdentifier: 
+  tileName: Door
   tile: {fileID: 11400000, guid: 59198098aaf015644b9f63d580682586, type: 2}
   altTile: {fileID: 11400000, guid: 9e9f15da5f60abb448bcbe6f8e0cf63e, type: 2}
   pillarTile: {fileID: 0}

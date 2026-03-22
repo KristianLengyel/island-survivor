@@ -1,57 +1,58 @@
-.statBarsRoot {
+.stat-bars-root {
     position: absolute;
     left: 4px;
-    bottom: 4px;
+    bottom: 8px;
     flex-direction: column;
-    flex-shrink: 0;
 }
 
-.statBarFrame {
-    width: 68px;
-    height: 28px;
+.stat-bar-frame {
+    width: 80px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
     background-image: resource("UI/Sprites/ui_background_nofill");
+    background-repeat: no-repeat;
+    background-position: center center;
     -unity-slice-left: 5;
     -unity-slice-right: 5;
     -unity-slice-top: 5;
     -unity-slice-bottom: 5;
     -unity-slice-scale: 1px;
-    padding-left: 4px;
-    padding-right: 4px;
-    padding-top: 4px;
-    padding-bottom: 4px;
-    flex-shrink: 0;
 }
 
-.hungerFrame {
-    margin-bottom: 8px;
-}
-
-.statBarTrack {
-    width: 60px;
-    height: 20px;
+.stat-bar-track {
+    position: relative;
+    width: 72px;
+    height: 8px;
     flex-shrink: 0;
     overflow: hidden;
 }
 
-.hungerTrack {
-    background-color: rgba(220, 180, 60, 0.28);
+.hunger-track {
+    background-color: rgba(65, 50, 15, 0.85);
 }
 
-.thirstTrack {
-    background-color: rgba(60, 140, 220, 0.28);
+.thirst-track {
+    background-color: rgba(15, 40, 75, 0.85);
 }
 
-.statBarFill {
-    height: 20px;
+.stat-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 8px;
+    width: 72px;
     flex-shrink: 0;
 }
 
-.hungerFill {
-    width: 60px;
-    background-color: rgba(220, 180, 60, 0.90);
+.hunger-fill {
+    background-color: rgba(220, 178, 50, 1);
 }
 
-.thirstFill {
-    width: 60px;
-    background-color: rgba(60, 140, 220, 0.90);
+.thirst-fill {
+    background-color: rgba(55, 145, 220, 1);
 }

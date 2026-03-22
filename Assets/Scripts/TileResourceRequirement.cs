@@ -7,6 +7,7 @@ public enum TileCategory { Floor, Wall, Door }
 [CreateAssetMenu(menuName = "Scriptable object/Tile Resource Requirement")]
 public class TileResourceRequirement : ScriptableObject
 {
+	public string tileName;
 	public TileBase tile;
 	public TileBase altTile;
 	public TileBase pillarTile;

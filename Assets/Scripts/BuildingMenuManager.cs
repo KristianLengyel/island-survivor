@@ -1,87 +1,183 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
+using UnityEngine.UIElements;
 
 public class BuildingMenuManager : MonoBehaviour
 {
-	[SerializeField] private GameObject buildingMenuUI;
 	[SerializeField] private Item hammerItem;
-	[SerializeField] private BuildingTileButton buttonPrefab;
-	[SerializeField] private Transform buttonContainer;
-	[SerializeField] private List<TileResourceRequirement> tileRequirements;
+	[SerializeField] private UIDocument uiDocument;
 
-	private BuildingTileButton selectedButton;
-	private readonly List<BuildingTileButton> buttons = new List<BuildingTileButton>();
+	private static readonly Color AffordableColor = Color.white;
+	private static readonly Color UnaffordableColor = new Color(0.314f, 0.314f, 0.314f, 1f);
+	private static readonly Color CostAffordableColor = new Color(1f, 1f, 1f, 0.85f);
+	private static readonly Color CostUnaffordableColor = new Color(0.86f, 0.31f, 0.31f, 1f);
 
-	public bool IsBuildingMenuOpen => buildingMenuUI.activeSelf;
+	private VisualElement overlay;
+	private VisualElement btnContainer;
+	private VisualElement costRow;
+	private VisualElement previewIcon;
+	private Label tileTypeLabel;
+	private VisualElement selectedBtn;
+	private TileResourceRequirement selectedRequirement;
+	private bool isOpen;
+
+	private struct ButtonEntry
+	{
+		public VisualElement btn;
+		public VisualElement icon;
+		public TileBase tile;
+	}
+
+	private struct CostEntry
+	{
+		public Label label;
+		public ResourceRequirement req;
+	}
+
+	private readonly List<ButtonEntry> buttons = new List<ButtonEntry>();
+	private readonly List<CostEntry> costLabels = new List<CostEntry>();
+
+	public bool IsBuildingMenuOpen => isOpen;
 
 	private void Start()
 	{
+		CacheUi();
 		BuildButtons();
+	}
+
+	private void CacheUi()
+	{
+		if (uiDocument == null) return;
+		var root = uiDocument.rootVisualElement;
+		overlay = root.Q<VisualElement>("build-menu-overlay");
+		btnContainer = root.Q<VisualElement>("build-btn-container");
+		costRow = root.Q<VisualElement>("build-cost-row");
+		tileTypeLabel = root.Q<Label>("build-tile-type");
+		previewIcon = root.Q<VisualElement>("build-preview-icon");
+	}
+
+	private void BuildButtons()
+	{
+		if (btnContainer == null) return;
+
+		var bm = GameManager.Instance != null ? GameManager.Instance.BuildingManager : null;
+		if (bm == null) return;
+
+		var reqs = bm.GetAllTileRequirements();
+		foreach (var req in reqs)
+		{
+			if (req == null || req.tile == null) continue;
+
+			var btn = new VisualElement();
+			btn.AddToClassList("build-tile-btn");
+
+			var icon = new VisualElement();
+			icon.AddToClassList("build-tile-icon");
+			if (req.menuIcon != null)
+				icon.style.backgroundImage = new StyleBackground(req.menuIcon);
+
+			btn.Add(icon);
+			btnContainer.Add(btn);
+
+			var capturedBtn = btn;
+			var capturedReq = req;
+			btn.RegisterCallback<ClickEvent>(_ => SelectButton(capturedBtn, capturedReq));
+
+			buttons.Add(new ButtonEntry { btn = btn, icon = icon, tile = req.tile });
+		}
 	}
 
 	private void Update()
 	{
 		if (GameInput.BuildMenuDown)
-		{
 			MenuCoordinator.Instance.Toggle("BuildMenu");
+		else if (GameInput.CancelDown && isOpen)
+			CloseBuildingMenu();
+
+		if (isOpen)
+			UpdateAffordability();
+	}
+
+	private void UpdateAffordability()
+	{
+		var bm = GameManager.Instance != null ? GameManager.Instance.BuildingManager : null;
+		if (bm == null) return;
+
+		for (int i = 0; i < buttons.Count; i++)
+		{
+			var entry = buttons[i];
+			entry.icon.style.unityBackgroundImageTintColor = bm.HasEnoughResources(entry.tile) ? AffordableColor : UnaffordableColor;
 		}
-		else if (GameInput.CancelDown && buildingMenuUI.activeSelf)
+
+		if (costLabels.Count == 0) return;
+
+		var inv = GameManager.Instance.InventoryManager;
+		for (int i = 0; i < costLabels.Count; i++)
+		{
+			var entry = costLabels[i];
+			bool canAfford = inv.GetItemCount(entry.req.resource.name) >= entry.req.amount;
+			entry.label.style.color = canAfford ? CostAffordableColor : CostUnaffordableColor;
+		}
+	}
+
+	private void SelectButton(VisualElement btn, TileResourceRequirement req)
+	{
+		if (selectedBtn != null)
+			selectedBtn.RemoveFromClassList("build-tile-btn--selected");
+
+		selectedBtn = btn;
+		selectedBtn.AddToClassList("build-tile-btn--selected");
+		selectedRequirement = req;
+
+		if (tileTypeLabel != null)
+			tileTypeLabel.text = string.IsNullOrEmpty(req.tileName) ? req.tileCategory.ToString() : req.tileName;
+
+		if (previewIcon != null)
+			previewIcon.style.backgroundImage = req.menuIcon != null ? new StyleBackground(req.menuIcon) : StyleKeyword.None;
+
+		GameManager.Instance.BuildingManager.SetSelectedTile(req.tile);
+		RebuildCostRow();
+	}
+
+	private void RebuildCostRow()
+	{
+		costRow.Clear();
+		costLabels.Clear();
+
+		if (selectedRequirement == null || selectedRequirement.resourceRequirements == null) return;
+
+		foreach (var r in selectedRequirement.resourceRequirements)
+		{
+			if (r.resource == null) continue;
+			var lbl = new Label($"{r.resource.name} x{r.amount}");
+			lbl.AddToClassList("build-cost-label");
+			costRow.Add(lbl);
+			costLabels.Add(new CostEntry { label = lbl, req = r });
+		}
+	}
+
+	public void ToggleBuildingMenu()
+	{
+		if (!isOpen)
+		{
+			if (!IsHoldingHammer()) return;
+			overlay.style.display = DisplayStyle.Flex;
+			isOpen = true;
+			if (selectedBtn == null && buttons.Count > 0)
+				SelectButton(buttons[0].btn, GameManager.Instance.BuildingManager.GetRequirement(buttons[0].tile));
+		}
+		else
 		{
 			CloseBuildingMenu();
 		}
 	}
 
-	private void BuildButtons()
-	{
-		if (buttonPrefab == null || buttonContainer == null) return;
-
-		foreach (var req in tileRequirements)
-		{
-			if (req == null || req.tile == null) continue;
-
-			BuildingTileButton btn = Instantiate(buttonPrefab, buttonContainer);
-			btn.Initialize(req.tile, req.menuIcon, this);
-			buttons.Add(btn);
-		}
-	}
-
-	private void ApplySelection(BuildingTileButton button)
-	{
-		if (selectedButton != null)
-			selectedButton.SetSelected(false);
-		selectedButton = button;
-		selectedButton.SetSelected(true);
-		GameManager.Instance.BuildingManager.SetSelectedTile(button.GetTile());
-	}
-
-	public void SelectButton(BuildingTileButton button)
-	{
-		if (selectedButton == button) return;
-		ApplySelection(button);
-	}
-
-	public void ToggleBuildingMenu()
-	{
-		if (!buildingMenuUI.activeSelf)
-		{
-			if (IsHoldingHammer())
-			{
-				buildingMenuUI.SetActive(true);
-				if (selectedButton == null && buttons.Count > 0)
-					ApplySelection(buttons[0]);
-				else if (selectedButton != null)
-					selectedButton.SetSelected(true);
-			}
-		}
-		else
-		{
-			buildingMenuUI.SetActive(false);
-		}
-	}
-
 	public void CloseBuildingMenu()
 	{
-		buildingMenuUI.SetActive(false);
+		if (overlay != null)
+			overlay.style.display = DisplayStyle.None;
+		isOpen = false;
 	}
 
 	private bool IsHoldingHammer()

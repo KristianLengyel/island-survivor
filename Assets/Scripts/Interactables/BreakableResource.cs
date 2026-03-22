@@ -35,6 +35,7 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 
 	private InventoryManager inventory;
 	private PlayerStats playerStats;
+	private PlayerController playerController;
 
 	public string SaveKey => "BreakableResource";
 
@@ -43,12 +44,6 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 		col = GetComponent<Collider2D>();
 		_highlightable = GetComponent<Highlightable>();
 		ResolveRenderers();
-
-		if (outlineRenderer != null)
-		{
-			if (!outlineRenderer.gameObject.activeSelf) outlineRenderer.gameObject.SetActive(true);
-			outlineRenderer.enabled = false;
-		}
 
 		currentHealth = Mathf.Clamp(maxHealth, 1, int.MaxValue);
 
@@ -73,15 +68,13 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 	{
 		if (inventory == null) inventory = GameManager.Instance != null ? GameManager.Instance.InventoryManager : null;
 		if (playerStats == null) playerStats = FindAnyObjectByType<PlayerStats>();
+		if (playerController == null) playerController = FindAnyObjectByType<PlayerController>();
 	}
 
 	private void ResolveRenderers()
 	{
-		if (outlineRenderer == null)
-		{
-			var t = transform.Find("Outline");
-			if (t != null) outlineRenderer = t.GetComponent<SpriteRenderer>();
-		}
+		GameObject _;
+		InteractableUtil.ResolveOutlineRenderer(transform, ref outlineRenderer, out _);
 
 		if (hitSpriteRenderer == null)
 		{
@@ -139,6 +132,13 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 			if (!playerStats.SpendStamina(staminaCostPerHit)) return;
 		}
 
+		if (playerController != null)
+		{
+			Vector2 toResource = (Vector2)(transform.position - playerController.transform.position);
+			if (toResource.sqrMagnitude > 0.001f)
+				playerController.SetFacingDirection(toResource.normalized);
+		}
+
 		nextAllowedTime = Time.time + Mathf.Max(0f, cooldown);
 
 		ApplyHit(1);
@@ -149,10 +149,7 @@ public class BreakableResource : MonoBehaviour, IInteractable, ISaveableComponen
 
 	public bool IsMouseOverSprite(Vector2 mouseWorldPos)
 	{
-		if (hitSpriteRenderer == null || hitSpriteRenderer.sprite == null) return false;
-		var b = hitSpriteRenderer.bounds;
-		return mouseWorldPos.x >= b.min.x && mouseWorldPos.x <= b.max.x &&
-			   mouseWorldPos.y >= b.min.y && mouseWorldPos.y <= b.max.y;
+		return InteractableUtil.IsMouseOverBounds(hitSpriteRenderer, mouseWorldPos);
 	}
 
 	// ----------------- Logic -----------------

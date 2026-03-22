@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e97f9593a1513e4281614191b793cc4, type: 3}
   m_Name: WoodenFloor3Tile
   m_EditorClassIdentifier: 
+  tileName: Plank Foundation
   tile: {fileID: 11400000, guid: b0a54154ffd81a543adf4bf9d099eb1b, type: 2}
   altTile: {fileID: 0}
   pillarTile: {fileID: 11400000, guid: e1a5eaad8fabc064b9621782eb1f525d, type: 2}

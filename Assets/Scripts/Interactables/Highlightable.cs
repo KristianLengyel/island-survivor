@@ -2,18 +2,36 @@ using UnityEngine;
 
 public class Highlightable : MonoBehaviour
 {
-	[SerializeField] private SpriteRenderer[] outlineRenderers;
+	[SerializeField] private SpriteRenderer[] renderers;
 
+	private static readonly int OutlineEnabledId = Shader.PropertyToID("_OutlineEnabled");
+
+	private MaterialPropertyBlock _block;
 	private bool _highlighted;
+
+	private void Awake()
+	{
+		_block = new MaterialPropertyBlock();
+	}
 
 	public void SetHighlight(bool on)
 	{
 		if (_highlighted == on) return;
 		_highlighted = on;
-		for (int i = 0; i < outlineRenderers.Length; i++)
+		for (int i = 0; i < renderers.Length; i++)
 		{
-			if (outlineRenderers[i] == null) continue;
-			outlineRenderers[i].gameObject.SetActive(on);
+			if (renderers[i] == null) continue;
+			if (renderers[i].gameObject != gameObject)
+			{
+				renderers[i].gameObject.SetActive(on);
+				renderers[i].enabled = on;
+			}
+			else
+			{
+				renderers[i].GetPropertyBlock(_block);
+				_block.SetFloat(OutlineEnabledId, on ? 1f : 0f);
+				renderers[i].SetPropertyBlock(_block);
+			}
 		}
 	}
 
