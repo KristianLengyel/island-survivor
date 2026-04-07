@@ -13,11 +13,16 @@ MonoBehaviour:
   m_Name: WoodenFloorTile
   m_EditorClassIdentifier: 
   tileName: Wooden Foundation
-  tile: {fileID: 11400000, guid: 09d9c9c052da7bc4dace2fcce2bd5528, type: 2}
+  tile: {fileID: 11400000, guid: 81d0c43e396d97d4db15594069449cec, type: 2}
   altTile: {fileID: 0}
   pillarTile: {fileID: 11400000, guid: 4bb10b1cc42fec646a873232575492e7, type: 2}
-  menuIcon: {fileID: -994616596, guid: 547fcdeca36ebfe48914ce4a4e37a1f5, type: 3}
+  pillarTopBottomTile: {fileID: 11400000, guid: 51bbf2f74ce57bd4ba8ec13aa2e0ce1e, type: 2}
+  pillarTopTile: {fileID: 11400000, guid: 962f56b9024b2b84395b4d019fd8c06c, type: 2}
+  pillarMiddleTile: {fileID: 11400000, guid: 8fcf95d162d478441986ce6c78515fb3, type: 2}
+  pillarEndTile: {fileID: 11400000, guid: 42efe6e3fd1490242baae698718e6bdd, type: 2}
+  menuIcon: {fileID: -219243140, guid: 66bd75a758ebd4844b273d881e324b1a, type: 3}
   tileCategory: 0
+  placementCondition: 0
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}
     amount: 1

@@ -250,7 +250,7 @@ TextureImporter:
         width: 16
         height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -272,7 +272,7 @@ TextureImporter:
         width: 16
         height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -294,7 +294,7 @@ TextureImporter:
         width: 16
         height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -303,6 +303,28 @@ TextureImporter:
       bones: []
       spriteID: e484edb24d4bec44c9359109dcaa4517
       internalID: 290718499
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: water_barrel_shadow
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 0
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7aed2c1e70e91aa4ab1bd53ec05a9d4a
+      internalID: 1475650290
       vertices: []
       indices: 
       edges: []
@@ -327,6 +349,7 @@ TextureImporter:
       water_barrel_filled_3: 134625959
       water_barrel_item: -412006470
       water_barrel_outline: 953884750
+      water_barrel_shadow: 1475650290
       water_barrel_water_mask_1: 290718499
       water_barrel_water_mask_2: -217866784
       water_barrel_water_mask_3: -787910035

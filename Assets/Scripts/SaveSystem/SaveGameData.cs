@@ -6,6 +6,8 @@ public class SaveGameData
 {
 	public int version = 1;
 	public uint mapSeed;
+	public string worldName = "";
+	public int mapSizePreset = 1;
 
 	public PlayerData player = new PlayerData();
 	public PlayerStatsData playerStats = new PlayerStatsData();

@@ -1,56 +1,132 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-  <ui:Style src="MainMenu.uss" />
+    <ui:Style src="MainMenu.uss" />
 
-  <ui:VisualElement name="viewport" class="viewport">
-    <ui:VisualElement name="screen" class="screen">
+    <ui:VisualElement name="root" class="root">
 
-      <ui:VisualElement name="dim" class="dim" />
+        <ui:VisualElement name="dim" class="dim" picking-mode="Ignore" />
 
-      <ui:VisualElement name="mainPanel" class="panel mainPanel">
-        <ui:Button name="continueBtn" class="pxBtn">
-          <ui:VisualElement class="capLeft" />
-          <ui:VisualElement class="mid" />
-          <ui:VisualElement class="capRight" />
-          <ui:Label text="CONTINUE" class="pxBtnLabel" />
-        </ui:Button>
+        <ui:Label text="ISLAND SURVIVOR" class="gameTitle" />
+        <ui:Label text="SURVIVAL GAME" class="gameSubtitle" />
 
-        <ui:Button name="newGameBtn" class="pxBtn">
-          <ui:VisualElement class="capLeft" />
-          <ui:VisualElement class="mid" />
-          <ui:VisualElement class="capRight" />
-          <ui:Label text="NEW GAME" class="pxBtnLabel" />
-        </ui:Button>
-
-        <ui:Button name="optionsBtn" class="pxBtn">
-          <ui:VisualElement class="capLeft" />
-          <ui:VisualElement class="mid" />
-          <ui:VisualElement class="capRight" />
-          <ui:Label text="OPTIONS" class="pxBtnLabel" />
-        </ui:Button>
-
-        <ui:Button name="quitBtn" class="pxBtn">
-          <ui:VisualElement class="capLeft" />
-          <ui:VisualElement class="mid" />
-          <ui:VisualElement class="capRight" />
-          <ui:Label text="QUIT" class="pxBtnLabel" />
-        </ui:Button>
-      </ui:VisualElement>
-
-      <ui:VisualElement name="optionsPanel" class="panel optionsPanel">
-        <ui:Label text="OPTIONS" class="pxOptionsTitle" />
-
-        <ui:VisualElement class="optionsContent">
-          <ui:Label text="(hook settings here later)" class="pxOptionsText" />
+        <ui:VisualElement name="mainPanel" class="mainPanel">
+            <ui:Button name="playBtn" class="pxBtn">
+                <ui:VisualElement class="capLeft" />
+                <ui:VisualElement class="mid" />
+                <ui:VisualElement class="capRight" />
+                <ui:Label text="PLAY" class="pxBtnLabel" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:Button name="optionsBtn" class="pxBtn">
+                <ui:VisualElement class="capLeft" />
+                <ui:VisualElement class="mid" />
+                <ui:VisualElement class="capRight" />
+                <ui:Label text="OPTIONS" class="pxBtnLabel" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:Button name="quitBtn" class="pxBtn">
+                <ui:VisualElement class="capLeft" />
+                <ui:VisualElement class="mid" />
+                <ui:VisualElement class="capRight" />
+                <ui:Label text="QUIT" class="pxBtnLabel" picking-mode="Ignore" />
+            </ui:Button>
         </ui:VisualElement>
 
-        <ui:Button name="backFromOptionsBtn" class="pxBtn">
-          <ui:VisualElement class="capLeft" />
-          <ui:VisualElement class="mid" />
-          <ui:VisualElement class="capRight" />
-          <ui:Label text="BACK" class="pxBtnLabel" />
-        </ui:Button>
-      </ui:VisualElement>
+        <ui:VisualElement name="worldSelectPanel" class="overlayPanel">
+            <ui:VisualElement class="menuBox">
+                <ui:Label text="SELECT WORLD" class="panelTitle" />
+                <ui:VisualElement name="slotList" class="slotList" />
+                <ui:Button name="backFromWorldSelectBtn" class="pxBtn">
+                    <ui:VisualElement class="capLeft" />
+                    <ui:VisualElement class="mid" />
+                    <ui:VisualElement class="capRight" />
+                    <ui:Label text="BACK" class="pxBtnLabel" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="newWorldPanel" class="overlayPanel">
+            <ui:VisualElement class="menuBox">
+                <ui:Label text="NEW WORLD" class="panelTitle" />
+                <ui:Label text="WORLD NAME" class="fieldLabel" />
+                <ui:TextField name="worldNameField" class="worldNameField" />
+                <ui:Label text="SIZE" class="fieldLabel" />
+                <ui:VisualElement name="sizeRow" class="sizeRow">
+                    <ui:Button name="sizeSmallBtn" class="pxBtn sizePxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="SMALL" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                    <ui:Button name="sizeMediumBtn" class="pxBtn sizePxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="MEDIUM" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                    <ui:Button name="sizeLargeBtn" class="pxBtn sizePxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="LARGE" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                    <ui:Button name="sizeHugeBtn" class="pxBtn sizePxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="HUGE" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                </ui:VisualElement>
+                <ui:VisualElement class="createRow">
+                    <ui:Button name="createWorldBtn" class="pxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="CREATE" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                    <ui:Button name="cancelNewWorldBtn" class="pxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="CANCEL" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="optionsPanel" class="overlayPanel">
+            <ui:VisualElement class="menuBox">
+                <ui:Label text="OPTIONS" class="panelTitle" />
+                <ui:Label text="(settings coming soon)" class="optionsHint" />
+                <ui:Button name="backFromOptionsBtn" class="pxBtn">
+                    <ui:VisualElement class="capLeft" />
+                    <ui:VisualElement class="mid" />
+                    <ui:VisualElement class="capRight" />
+                    <ui:Label text="BACK" class="pxBtnLabel" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="confirmDeletePanel" class="overlayPanel">
+            <ui:VisualElement class="menuBox">
+                <ui:Label text="DELETE WORLD?" class="panelTitle" />
+                <ui:Label name="confirmDeleteMsg" class="confirmDeleteMsg" />
+                <ui:Label text="THIS CANNOT BE UNDONE." class="confirmDeleteWarn" />
+                <ui:VisualElement class="createRow">
+                    <ui:Button name="confirmDeleteBtn" class="pxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="DELETE" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                    <ui:Button name="cancelDeleteBtn" class="pxBtn">
+                        <ui:VisualElement class="capLeft" />
+                        <ui:VisualElement class="mid" />
+                        <ui:VisualElement class="capRight" />
+                        <ui:Label text="CANCEL" class="pxBtnLabel" picking-mode="Ignore" />
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Label text="v0.1" class="versionLabel" />
 
     </ui:VisualElement>
-  </ui:VisualElement>
 </ui:UXML>

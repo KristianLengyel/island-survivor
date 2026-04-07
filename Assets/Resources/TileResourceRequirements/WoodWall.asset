@@ -13,11 +13,16 @@ MonoBehaviour:
   m_Name: WoodWall
   m_EditorClassIdentifier: 
   tileName: Wooden Wall
-  tile: {fileID: 11400000, guid: d8c5c0efb29cb5c48a689c484fa2a952, type: 2}
+  tile: {fileID: 11400000, guid: 64cf13614a11a4e48905aab844958d82, type: 2}
   altTile: {fileID: 0}
   pillarTile: {fileID: 0}
-  menuIcon: {fileID: -8255767422996271102, guid: a0410356c56d40d44a87aa71e508869f, type: 3}
+  pillarTopBottomTile: {fileID: 0}
+  pillarTopTile: {fileID: 0}
+  pillarMiddleTile: {fileID: 0}
+  pillarEndTile: {fileID: 0}
+  menuIcon: {fileID: 1706107314, guid: df218cc094147b848a754c9b0696e13f, type: 3}
   tileCategory: 1
+  placementCondition: 2
   resourceRequirements:
   - resource: {fileID: 11400000, guid: 14e39bc667ce84441856475199e27e20, type: 2}
     amount: 1

@@ -1,4 +1,48 @@
-.inv-overlay {
+.panel-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-font-definition: resource("Fonts/ThaleahFat_UIToolkit");
+}
+
+/* -------------------------------------------------------
+   Toolbar (always visible)
+------------------------------------------------------- */
+
+.toolbar-root {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.toolbar-slot-grid {
+    flex-direction: row;
+    align-items: center;
+    background-image: resource("UI/Sprites/ui_background");
+    background-repeat: no-repeat;
+    background-position: center center;
+    -unity-slice-left: 5;
+    -unity-slice-right: 5;
+    -unity-slice-top: 5;
+    -unity-slice-bottom: 5;
+    -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 3px;
+    padding-left: 5px;
+}
+
+/* -------------------------------------------------------
+   Map Overlay
+------------------------------------------------------- */
+
+.map-overlay {
     display: none;
     position: absolute;
     left: 0;
@@ -8,7 +52,74 @@
     background-color: rgba(0, 0, 0, 0.39);
     align-items: center;
     justify-content: center;
-    -unity-font-definition: resource("Fonts/ThaleahFat_UIToolkit");
+}
+
+.map-panel-wrapper {
+    position: relative;
+    overflow: visible;
+}
+
+.map-panel {
+    background-image: resource("UI/Sprites/ui_background");
+    background-repeat: no-repeat;
+    background-position: center center;
+    -unity-slice-left: 5;
+    -unity-slice-right: 5;
+    -unity-slice-top: 5;
+    -unity-slice-bottom: 5;
+    -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.map-viewport {
+    width: 196px;
+    height: 196px;
+    overflow: hidden;
+}
+
+.map-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-repeat: no-repeat;
+    background-position: left top;
+    background-size: 100% 100%;
+}
+
+.map-player-marker {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 7px 7px;
+}
+
+/* -------------------------------------------------------
+   Inventory Overlay
+------------------------------------------------------- */
+
+.inv-overlay {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.39);
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 72px;
+}
+
+.inv-panels-col {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 .inv-panels-row {
@@ -20,10 +131,13 @@
    Inventory Panel
 ------------------------------------------------------- */
 
+.inv-col {
+    overflow: visible;
+}
+
 .inv-panel-wrapper {
     position: relative;
     overflow: visible;
-    margin-right: 8px;
 }
 
 .inv-panel {
@@ -35,19 +149,14 @@
     -unity-slice-top: 5;
     -unity-slice-bottom: 5;
     -unity-slice-scale: 1px;
-    padding-left: 8px;
-    padding-right: 8px;
-    padding-top: 16px;
-    padding-bottom: 8px;
+    -unity-slice-type: tiled;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
 }
 
-.inv-slot-grid {
-    width: 110px;
-    flex-direction: row;
-    flex-wrap: wrap;
-}
-
-/* Inventory slots — instantiated by C# */
+/* Inventory slots — created by C# */
 .inv-slot {
     width: 20px;
     height: 20px;
@@ -88,12 +197,26 @@
 
 .inv-slot-count {
     position: absolute;
-    right: 1px;
-    bottom: 1px;
-    flex-shrink: 0;
-    font-size: 7px;
+    left: -1px;
+    top: -1px;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.95);
     -unity-text-align: lower-right;
+    -unity-text-outline-width: 0.5px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.85);
+}
+
+/* -------------------------------------------------------
+   Chest Panel
+------------------------------------------------------- */
+
+.chest-panel-wrapper {
+    display: none;
+    position: relative;
+    overflow: visible;
+    margin-bottom: 8px;
 }
 
 /* -------------------------------------------------------
@@ -103,7 +226,7 @@
 .inv-panel-title {
     position: absolute;
     left: 7px;
-    top: -10px;
+    top: -14px;
     height: 14px;
     flex-shrink: 0;
     margin: 0;
@@ -119,8 +242,58 @@
     -unity-slice-top: 5;
     -unity-slice-bottom: 5;
     -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
     font-size: 8px;
     color: rgba(255, 255, 255, 1);
+    -unity-text-align: middle-center;
+}
+
+/* -------------------------------------------------------
+   Craft Category Bar
+------------------------------------------------------- */
+
+.craft-category-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.craft-category-btn {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-right: 2px;
+    margin-bottom: 2px;
+    background-image: resource("UI/Sprites/ui_slot_normal");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 18px 18px;
+    align-items: center;
+    justify-content: center;
+}
+
+.craft-category-btn:hover {
+    background-image: resource("UI/Sprites/ui_slot_building_normal");
+    background-size: 18px 18px;
+}
+
+.craft-category-btn--selected {
+    background-image: resource("UI/Sprites/ui_slot_building_highlight");
+    background-size: 18px 18px;
+}
+
+.craft-category-btn-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 12px 12px;
+}
+
+.craft-category-btn-label {
+    font-size: 6px;
+    color: rgba(255, 255, 255, 0.85);
     -unity-text-align: middle-center;
 }
 
@@ -133,9 +306,40 @@
     overflow: visible;
 }
 
+.craft-details-wrapper {
+    display: none;
+    position: absolute;
+    overflow: visible;
+    left: 100%;
+    margin-left: 8px;
+    bottom: 0;
+}
+
 .craft-panel {
-    flex-direction: row;
-    align-items: flex-start;
+    flex-direction: column;
+    width: 164px;
+    background-image: resource("UI/Sprites/ui_background");
+    background-repeat: no-repeat;
+    background-position: center center;
+    -unity-slice-left: 5;
+    -unity-slice-right: 5;
+    -unity-slice-top: 5;
+    -unity-slice-bottom: 5;
+    -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.craft-scroll {
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.craft-details-panel {
+    flex-direction: column;
     background-image: resource("UI/Sprites/ui_background");
     background-repeat: no-repeat;
     background-position: center center;
@@ -149,13 +353,11 @@
     padding-right: 8px;
     padding-top: 16px;
     padding-bottom: 8px;
+    width: 88px;
 }
 
-.craft-left-section {
-    width: 66px;
-    flex-direction: column;
-    flex-shrink: 0;
-    margin-right: 8px;
+.inv-craft-row {
+    margin-bottom: 20px;
 }
 
 .craft-section-label {
@@ -167,13 +369,7 @@
     -unity-text-align: middle-center;
 }
 
-.craft-slot-grid {
-    width: 66px;
-    flex-direction: row;
-    flex-wrap: wrap;
-}
-
-/* Craft recipe slots — instantiated by C# */
+/* Craft recipe slots — created by C# */
 .craft-slot {
     width: 20px;
     height: 20px;
@@ -186,6 +382,13 @@
     background-size: 20px 20px;
     align-items: center;
     justify-content: center;
+}
+
+.craft-slot:hover {
+    background-image: resource("UI/Sprites/ui_slot_building_normal");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 20px 20px;
 }
 
 .craft-slot--selected {
@@ -204,16 +407,6 @@
     background-size: 16px 16px;
 }
 
-/* -------------------------------------------------------
-   Recipe Detail (right section)
-------------------------------------------------------- */
-
-.craft-right-section {
-    width: 72px;
-    flex-direction: column;
-    flex-shrink: 0;
-}
-
 .craft-preview-frame {
     width: 36px;
     height: 36px;
@@ -221,7 +414,7 @@
     margin-bottom: 6px;
     align-items: center;
     justify-content: center;
-    background-image: resource("UI/Sprites/ui_background_nofill");
+    background-image: resource("UI/Sprites/ui_background");
     background-repeat: no-repeat;
     background-position: center center;
     -unity-slice-left: 5;
@@ -229,6 +422,7 @@
     -unity-slice-top: 5;
     -unity-slice-bottom: 5;
     -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
 }
 
 .craft-preview-inner {
@@ -264,7 +458,7 @@
     margin-bottom: 4px;
 }
 
-/* Ingredient rows — instantiated by C# */
+/* Ingredient rows — created by C# */
 .craft-ingredient-row {
     flex-direction: row;
     align-items: center;
@@ -326,6 +520,7 @@
     -unity-slice-top: 5;
     -unity-slice-bottom: 5;
     -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
     align-items: center;
     justify-content: center;
 }
@@ -338,4 +533,53 @@
     font-size: 8px;
     color: rgba(255, 255, 255, 1);
     -unity-text-align: middle-center;
+}
+
+/* -------------------------------------------------------
+   Tooltip
+------------------------------------------------------- */
+
+.inv-tooltip {
+    position: absolute;
+    display: none;
+    background-image: resource("UI/Sprites/ui_background");
+    background-repeat: no-repeat;
+    background-position: center center;
+    -unity-slice-left: 5;
+    -unity-slice-right: 5;
+    -unity-slice-top: 5;
+    -unity-slice-bottom: 5;
+    -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    flex-direction: column;
+}
+
+.inv-tooltip-name {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 1);
+    -unity-text-align: middle-left;
+}
+
+.inv-tooltip-type {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.6);
+    -unity-text-align: middle-left;
+}
+
+/* -------------------------------------------------------
+   Drag ghost
+------------------------------------------------------- */
+
+.inv-drag-ghost {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 16px 16px;
+    opacity: 0.75;
 }

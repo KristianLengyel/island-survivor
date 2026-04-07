@@ -196,7 +196,7 @@ public class WaterBarrelController : MonoBehaviour, IInteractable, ISaveableComp
 		var slotGo = inventoryManager.inventorySlots[idx];
 		if (slotGo == null) return;
 
-		WaterContainerInventoryItem slotItem = slotGo.GetComponentInChildren<WaterContainerInventoryItem>();
+		WaterContainerInventoryItem slotItem = slotGo.CurrentItem as WaterContainerInventoryItem;
 		if (slotItem == null || slotItem.item == null) return;
 		if (slotItem.currentFill >= slotItem.item.maxFillCapacity) return;
 

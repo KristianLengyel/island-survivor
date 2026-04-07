@@ -63,7 +63,7 @@ public class PlayerItemUseController : MonoBehaviour
 		}
 
 		var slot = inventoryManager.inventorySlots[inventoryManager.SelectedSlotIndex];
-		var baseSlotItem = slot.GetComponentInChildren<InventoryItem>();
+		var baseSlotItem = slot.CurrentItem;
 		var slotItem = baseSlotItem as WaterContainerInventoryItem;
 
 		if (GameInput.RmbDown)

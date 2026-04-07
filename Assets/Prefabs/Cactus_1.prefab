@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 409795069167765765}
   - component: {fileID: 714853207900424695}
   - component: {fileID: -3976940462603704653}
+  - component: {fileID: 2460034799456084686}
   m_Layer: 0
   m_Name: Cactus_1
   m_TagString: Untagged
@@ -34,6 +35,7 @@ Transform:
   m_Children:
   - {fileID: 4940998867974348235}
   - {fileID: 8183197741604680721}
+  - {fileID: 7675750278812072656}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &409795069167765765
@@ -146,13 +148,31 @@ MonoBehaviour:
   interactionRange: 2
   outlineRenderer: {fileID: 1407861982103441483}
   hitSpriteRenderer: {fileID: 409795069167765765}
-  requiredTool: {fileID: 0}
+  requiredTool: {fileID: 11400000, guid: d81b0d085d7f1a24fb72a90e96af294b, type: 2}
   maxHealth: 2
   cooldown: 0.5
   staminaCostPerHit: 0
   breakStageSprites: []
   drops: []
   showInventoryNotification: 1
+--- !u!114 &2460034799456084686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 277635162677226526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94e1534054da5f2429b987a96db08562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FakeShadow2D
+  sourceRenderer: {fileID: 409795069167765765}
+  shadowPivot: {fileID: 7675750278812072656}
+  customShadowSprite: {fileID: 0}
+  autoDetectPivot: 0
+  pivotOffset: {x: 0, y: 0}
+  sortingOrderOffset: -2
 --- !u!1 &1009659635246323433
 GameObject:
   m_ObjectHideFlags: 0
@@ -169,7 +189,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4940998867974348235
 Transform:
   m_ObjectHideFlags: 0
@@ -244,6 +264,37 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &3157726106243618561
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7675750278812072656}
+  m_Layer: 0
+  m_Name: ShadowPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7675750278812072656
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3157726106243618561}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.091, y: -0.809, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6763211774591195142}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4654395045514483422
 GameObject:
   m_ObjectHideFlags: 0

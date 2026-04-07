@@ -43,11 +43,14 @@ public class PlayerAnimationDriver : MonoBehaviour
 			animator.SetBool("isSwimming", tileDetector.IsInWater());
 		}
 
+		if (move != Vector2.zero)
+			ClearFacingDirection();
+
 		Vector2 faceSource = _facingOverride && _facingDir != Vector2.zero ? _facingDir : move;
 
 		if (faceSource != Vector2.zero)
 		{
-			if (Mathf.Abs(faceSource.x) > Mathf.Abs(faceSource.y))
+			if (Mathf.Abs(faceSource.x) > Mathf.Abs(faceSource.y) + 0.1f)
 			{
 				animator.SetFloat("lastMoveX", Mathf.Sign(faceSource.x));
 				animator.SetFloat("lastMoveY", 0f);

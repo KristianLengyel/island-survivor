@@ -105,6 +105,7 @@ public class MapGeneratorV3 : MonoBehaviour
 				MapMasksV3.FillSmallLakes(w.data, s.minLakeTiles, w);
 				MapDistanceFieldV3.Compute(w.data, w.bfsQueue);
 				MapMasksV3.PropagateIslandBiomes(w.data, w, s);
+				MapMasksV3.NormalizeBiomesPerComponent(w.data, w);
 				MapBiomesV3.BuildBands(w.data, s, ref rng, w);
 				MapDecoratorsV3.PlaceAll(w.data, s, seaweedOffset);
 			}

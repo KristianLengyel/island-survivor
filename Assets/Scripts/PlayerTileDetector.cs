@@ -10,6 +10,7 @@ public class PlayerTileDetector : MonoBehaviour
 	public float shallowWaterOffset = 0.35f;
 	public float mediumWaterOffset = 0.55f;
 	public float deepWaterOffset = 0.75f;
+	public float abyssWaterOffset = 0.75f;
 
 	private TileChecker tileChecker;
 	private Vector3 originalMaskPosition;
@@ -31,6 +32,7 @@ public class PlayerTileDetector : MonoBehaviour
 			{ "Shallow", shallowWaterOffset },
 			{ "Medium", mediumWaterOffset },
 			{ "Deep", deepWaterOffset },
+			{ "Abyss", abyssWaterOffset },
 			{ "Water", mediumWaterOffset }
 		};
 

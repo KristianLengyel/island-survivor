@@ -1,36 +1,76 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="InventoryPanel.uss"/>
-    <ui:VisualElement name="inventory-root" class="inv-overlay">
-        <ui:VisualElement class="inv-panels-row">
+    <ui:VisualElement name="panel-root" class="panel-root">
 
-            <ui:VisualElement class="inv-panel-wrapper">
-                <ui:VisualElement class="inv-panel">
-                    <ui:VisualElement name="inv-slot-container" class="inv-slot-grid"/>
-                </ui:VisualElement>
-                <ui:Label text="inventory" class="inv-panel-title"/>
-            </ui:VisualElement>
+        <ui:VisualElement name="inventory-root" class="inv-overlay">
+            <ui:VisualElement class="inv-panels-col">
 
-            <ui:VisualElement class="craft-panel-wrapper">
-                <ui:VisualElement class="craft-panel">
-                    <ui:VisualElement class="craft-left-section">
-                        <ui:Label text="recipes" class="craft-section-label"/>
-                        <ui:VisualElement name="craft-slot-container" class="craft-slot-grid"/>
-                    </ui:VisualElement>
-                    <ui:VisualElement class="craft-right-section">
-                        <ui:VisualElement name="craft-preview-icon" class="craft-preview-frame">
-                            <ui:VisualElement class="craft-preview-inner"/>
+                <ui:VisualElement class="inv-panels-row inv-craft-row">
+
+                    <ui:VisualElement name="craft-panel-wrapper" class="craft-panel-wrapper">
+                        <ui:VisualElement class="craft-panel">
+                            <ui:VisualElement name="craft-category-bar" class="craft-category-bar"/>
+                            <ui:ScrollView name="craft-scroll" class="craft-scroll" vertical-scroller-visibility="Hidden" horizontal-scroller-visibility="Hidden">
+                                <ui:VisualElement name="craft-slot-container" class="craft-slot-grid"/>
+                            </ui:ScrollView>
                         </ui:VisualElement>
-                        <ui:Label text="" name="craft-result-name" class="craft-result-name"/>
-                        <ui:Label text="requires" name="craft-requires-label" class="craft-requires-label"/>
-                        <ui:VisualElement name="craft-ingredients-container" class="craft-ingredients-container"/>
-                        <ui:Button name="craft-button" class="craft-button">
-                            <ui:Label text="craft" class="craft-button-label"/>
-                        </ui:Button>
+                        <ui:Label text="craft" class="inv-panel-title"/>
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+
+                <ui:VisualElement class="inv-panels-row">
+
+                    <ui:VisualElement class="inv-col">
+
+                        <ui:VisualElement name="chest-panel-wrapper" class="chest-panel-wrapper">
+                            <ui:VisualElement name="chest-slot-container" class="inv-panel"/>
+                            <ui:Label text="chest" class="inv-panel-title"/>
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="inv-panel-wrapper">
+                            <ui:VisualElement name="inv-slot-container" class="inv-panel"/>
+                            <ui:Label text="inventory" class="inv-panel-title"/>
+                        </ui:VisualElement>
+
+                        <ui:VisualElement name="craft-details-wrapper" class="craft-details-wrapper">
+                            <ui:VisualElement class="craft-details-panel">
+                                <ui:VisualElement name="craft-preview-icon" class="craft-preview-frame">
+                                    <ui:VisualElement name="craft-preview-inner" class="craft-preview-inner"/>
+                                </ui:VisualElement>
+                                <ui:Label text="" name="craft-result-name" class="craft-result-name"/>
+                                <ui:Label text="requires" name="craft-requires-label" class="craft-requires-label"/>
+                                <ui:VisualElement name="craft-ingredients-container" class="craft-ingredients-container"/>
+                                <ui:Button name="craft-button" class="craft-button">
+                                    <ui:Label text="craft" class="craft-button-label"/>
+                                </ui:Button>
+                            </ui:VisualElement>
+                            <ui:Label text="recipe" class="inv-panel-title"/>
+                        </ui:VisualElement>
+
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="map-root" class="map-overlay">
+            <ui:VisualElement class="map-panel-wrapper">
+                <ui:VisualElement class="map-panel">
+                    <ui:VisualElement name="map-viewport" class="map-viewport">
+                        <ui:VisualElement name="map-canvas" class="map-canvas">
+                            <ui:VisualElement name="map-player-marker" class="map-player-marker"/>
+                        </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:Label text="craft" class="inv-panel-title"/>
+                <ui:Label text="map" class="inv-panel-title"/>
             </ui:VisualElement>
-
         </ui:VisualElement>
+
+        <ui:VisualElement name="toolbar-root" class="toolbar-root">
+            <ui:VisualElement name="toolbar-slot-container" class="toolbar-slot-grid"/>
+        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>

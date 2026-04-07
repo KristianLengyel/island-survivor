@@ -33,11 +33,9 @@ public class ResourceEntryUI : MonoBehaviour
 		int totalAvailable = 0;
 		foreach (var slot in inventoryManager.inventorySlots)
 		{
-			InventoryItem item = slot.GetComponentInChildren<InventoryItem>();
-			if (item != null && item.item.name == resource.name)
-			{
+			InventoryItem item = slot.CurrentItem;
+			if (item != null && item.item != null && item.item.name == resource.name)
 				totalAvailable += item.count;
-			}
 		}
 		return totalAvailable;
 	}

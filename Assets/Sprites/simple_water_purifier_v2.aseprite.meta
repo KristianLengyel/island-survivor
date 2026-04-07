@@ -653,6 +653,27 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 0, y: 0}
+  - name: simple_water_purifier_v2_shadow
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 196
+      y: 4
+      width: 16
+      height: 32
+    spriteID: 7b0285f03bf576448bb6f5907c5e6515
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 0, y: 0}
   tileSetImportData: []
   asepriteLayers:
   - layerIndex: 0
@@ -673,7 +694,7 @@ ScriptedImporter:
       cellRect:
         x: 0
         y: 0
-        width: 191
+        width: 208
         height: 29
       spriteId: 1f6c8d53a4ef4814da328b32343a2658
     linkedCells: []
@@ -709,5 +730,5 @@ ScriptedImporter:
   generatePhysicsShape: 0
   secondarySpriteTextures: []
   spritePackingTag: 
-  canvasSize: {x: 192, y: 32}
+  canvasSize: {x: 208, y: 32}
   previousTextureSize: {x: 256, y: 64}

@@ -68,12 +68,14 @@ public class BuildingMenuManager : MonoBehaviour
 		foreach (var req in reqs)
 		{
 			if (req == null || req.tile == null) continue;
+			if (bm.GetTileCategory(req.tile) == TileCategory.Pipe) continue;
 
 			var btn = new VisualElement();
 			btn.AddToClassList("build-tile-btn");
 
 			var icon = new VisualElement();
 			icon.AddToClassList("build-tile-icon");
+			icon.pickingMode = PickingMode.Ignore;
 			if (req.menuIcon != null)
 				icon.style.backgroundImage = new StyleBackground(req.menuIcon);
 
@@ -82,7 +84,11 @@ public class BuildingMenuManager : MonoBehaviour
 
 			var capturedBtn = btn;
 			var capturedReq = req;
-			btn.RegisterCallback<ClickEvent>(_ => SelectButton(capturedBtn, capturedReq));
+			btn.RegisterCallback<PointerDownEvent>(evt =>
+			{
+				if (evt.button != 0) return;
+				SelectButton(capturedBtn, capturedReq);
+			});
 
 			buttons.Add(new ButtonEntry { btn = btn, icon = icon, tile = req.tile });
 		}

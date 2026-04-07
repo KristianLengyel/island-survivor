@@ -58,6 +58,7 @@ public class FishManager : MonoBehaviour
 	void Update()
 	{
 		if (!ready) return;
+		if (player == null) return;
 
 		for (int i = 0; i < spawnedFish.Count; i++)
 		{

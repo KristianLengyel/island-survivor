@@ -111,7 +111,7 @@ public class WaterPurifier : MonoBehaviour, IInteractable, ISaveableComponent
 	{
 		Item selectedItem = inventoryManager.GetSelectedItem();
 		int selectedSlotIndex = inventoryManager.SelectedSlotIndex;
-		var slotItem = inventoryManager.inventorySlots[selectedSlotIndex].GetComponentInChildren<WaterContainerInventoryItem>();
+		var slotItem = inventoryManager.inventorySlots[selectedSlotIndex].CurrentItem as WaterContainerInventoryItem;
 
 		if (state == PurifierState.Purified)
 		{
@@ -150,7 +150,6 @@ public class WaterPurifier : MonoBehaviour, IInteractable, ISaveableComponent
 			slotItem.currentFill >= WATER_FILL_AMOUNT)
 		{
 			slotItem.currentFill -= WATER_FILL_AMOUNT;
-			slotItem.UpdateSprite();
 			slotItem.RefreshCount();
 
 			hasSaltWaterLoaded = true;
@@ -291,7 +290,7 @@ public class WaterPurifier : MonoBehaviour, IInteractable, ISaveableComponent
 	{
 		Item selectedItem = inventoryManager?.GetSelectedItem();
 		var slotItem = inventoryManager?.inventorySlots[inventoryManager.SelectedSlotIndex]
-			.GetComponentInChildren<WaterContainerInventoryItem>();
+			.CurrentItem as WaterContainerInventoryItem;
 
 		bool canHighlight = false;
 

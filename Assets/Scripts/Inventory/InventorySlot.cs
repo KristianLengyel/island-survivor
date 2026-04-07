@@ -1,88 +1,101 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
-public class InventorySlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+public class InventorySlot
 {
-	public Image image;
-	public Sprite slotImage, selectedSlotImage, highlightedSlotImage;
+	public InventoryItem CurrentItem { get; private set; }
+	public bool IsEmpty => CurrentItem == null;
+	public bool IsChestSlot { get; set; }
+	public VisualElement Element { get; private set; }
 
-	private bool isSelected = false;
+	private VisualElement iconElement;
+	private Label countLabel;
+	private bool isSelected;
 
-	private void Awake()
+	public void Initialize(VisualElement slotElement)
 	{
-		Deselect();
+		Element = slotElement;
+		iconElement = slotElement.Q<VisualElement>(null, "inv-slot-icon");
+		countLabel = slotElement.Q<Label>(null, "inv-slot-count");
+		if (isSelected)
+			Element.AddToClassList("inv-slot--selected");
+		RefreshVisual();
 	}
 
-	public void Deselect()
+	public void Uninitialize()
 	{
-		isSelected = false;
-		image.sprite = slotImage;
+		Element = null;
+		iconElement = null;
+		countLabel = null;
+		IsChestSlot = false;
+	}
+
+	public void SetItem(InventoryItem item)
+	{
+		if (CurrentItem != null)
+			CurrentItem.slot = null;
+
+		CurrentItem = item;
+
+		if (item != null)
+			item.slot = this;
+
+		RefreshVisual();
+	}
+
+	public void ClearItem()
+	{
+		if (CurrentItem != null)
+			CurrentItem.slot = null;
+
+		CurrentItem = null;
+		RefreshVisual();
+	}
+
+	public void RefreshVisual()
+	{
+		if (Element == null) return;
+
+		if (CurrentItem == null || CurrentItem.item == null)
+		{
+			if (iconElement != null)
+				iconElement.style.backgroundImage = StyleKeyword.None;
+			if (countLabel != null)
+			{
+				countLabel.text = "";
+				countLabel.style.display = DisplayStyle.None;
+			}
+			return;
+		}
+
+		Sprite sprite = CurrentItem.GetSprite();
+		if (iconElement != null && sprite != null)
+			iconElement.style.backgroundImage = new StyleBackground(sprite);
+
+		if (countLabel != null)
+		{
+			if (CurrentItem.count > 1)
+			{
+				countLabel.text = CurrentItem.count.ToString();
+				countLabel.style.display = DisplayStyle.Flex;
+			}
+			else
+			{
+				countLabel.text = "";
+				countLabel.style.display = DisplayStyle.None;
+			}
+		}
 	}
 
 	public void Select()
 	{
 		isSelected = true;
-		image.sprite = selectedSlotImage;
+		Element?.AddToClassList("inv-slot--selected");
 	}
 
-	public void OnDrop(PointerEventData eventData)
+	public void Deselect()
 	{
-		InventoryItem droppedItem = eventData.pointerDrag.GetComponent<InventoryItem>();
-		if (droppedItem == null) return;
-
-		if (transform.childCount == 0)
-		{
-			droppedItem.parentAfterDrag = transform;
-		}
-		else
-		{
-			InventoryItem currentItem = GetComponentInChildren<InventoryItem>();
-			if (currentItem != null && currentItem.item == droppedItem.item && currentItem.item.stackable)
-			{
-				int totalAmount = currentItem.count + droppedItem.count;
-				int remainingAmount = totalAmount - GameManager.Instance.InventoryManager.maxStackedItems;
-
-				if (remainingAmount > 0)
-				{
-					currentItem.count = GameManager.Instance.InventoryManager.maxStackedItems;
-					droppedItem.count = remainingAmount;
-					droppedItem.RefreshCount();
-					currentItem.RefreshCount();
-				}
-				else
-				{
-					currentItem.count = totalAmount;
-					droppedItem.count = 0;
-					droppedItem.RefreshCount();
-					Destroy(droppedItem.gameObject);
-					currentItem.RefreshCount();
-				}
-			}
-			else
-			{
-				Transform currentParent = currentItem.transform.parent;
-				currentItem.transform.SetParent(droppedItem.parentAfterDrag);
-				droppedItem.parentAfterDrag = currentParent;
-			}
-		}
-
-		GameManager.Instance.InventoryManager.MarkCountsDirty();
-	}
-
-	public void OnPointerEnter(PointerEventData eventData)
-	{
-		if (!isSelected)
-		{
-			image.sprite = highlightedSlotImage;
-		}
-	}
-
-	public void OnPointerExit(PointerEventData eventData)
-	{
-		if (!isSelected)
-		{
-			image.sprite = slotImage;
-		}
+		isSelected = false;
+		Element?.RemoveFromClassList("inv-slot--selected");
 	}
 }

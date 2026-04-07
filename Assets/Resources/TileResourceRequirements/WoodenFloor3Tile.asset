@@ -16,6 +16,10 @@ MonoBehaviour:
   tile: {fileID: 11400000, guid: b0a54154ffd81a543adf4bf9d099eb1b, type: 2}
   altTile: {fileID: 0}
   pillarTile: {fileID: 11400000, guid: e1a5eaad8fabc064b9621782eb1f525d, type: 2}
+  pillarTopBottomTile: {fileID: 11400000, guid: 44b144751058d1c448229224a7fa8ca6, type: 2}
+  pillarTopTile: {fileID: 11400000, guid: 7240bd5569240d64f9463f721699ed60, type: 2}
+  pillarMiddleTile: {fileID: 11400000, guid: 7240bd5569240d64f9463f721699ed60, type: 2}
+  pillarEndTile: {fileID: 11400000, guid: 44b144751058d1c448229224a7fa8ca6, type: 2}
   menuIcon: {fileID: 316224499, guid: 477a5b26f44242c40ac850413b3de411, type: 3}
   tileCategory: 0
   resourceRequirements:

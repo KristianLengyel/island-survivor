@@ -106,6 +106,7 @@ GameObject:
   - component: {fileID: -6356905967484702295}
   - component: {fileID: 462264542495150066}
   - component: {fileID: 8616094007210837335}
+  - component: {fileID: 3690241830140333386}
   m_Layer: 0
   m_Name: Water Barrel
   m_TagString: Untagged
@@ -126,6 +127,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 8680116231591054734}
   - {fileID: 3985031289090959388}
   - {fileID: 83446392552387521}
   m_Father: {fileID: 0}
@@ -286,6 +288,55 @@ SortingGroup:
   m_SortingOrder: 5
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
+--- !u!114 &3690241830140333386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5289041684281320090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94e1534054da5f2429b987a96db08562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FakeShadow2D
+  sourceRenderer: {fileID: 7744615657203179439}
+  shadowPivot: {fileID: 8680116231591054734}
+  customShadowSprite: {fileID: 0}
+  autoDetectPivot: 0
+  pivotOffset: {x: 0, y: 0}
+  sortingOrderOffset: -2
+--- !u!1 &6676298845854805129
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8680116231591054734}
+  m_Layer: 0
+  m_Name: ShadowPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8680116231591054734
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6676298845854805129}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.362, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1630745859358323423}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8022647317693668592
 GameObject:
   m_ObjectHideFlags: 0

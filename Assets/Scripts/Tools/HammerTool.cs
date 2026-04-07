@@ -12,6 +12,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	public Tilemap waterTilemap;
 	public Tilemap betweenOceanFloorWaterTilemap;
 	public Tilemap objectsTilemap;
+	public Tilemap pipeTilemap;
 
 	[Header("Tiles")]
 	public TileBase waterTile;
@@ -23,16 +24,22 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	[Header("Walkable Marker Tile")]
 	[SerializeField] private TileBase walkableMarkerTile;
 
+	[Header("Ocean Floor Depth Tilemaps")]
+	[SerializeField] private Tilemap oceanFloorShallowTilemap;
+	[SerializeField] private Tilemap oceanFloorMediumTilemap;
+	[SerializeField] private Tilemap oceanFloorDeepTilemap;
+	[SerializeField] private Tilemap oceanFloorAbyssTilemap;
+
 	[Header("Items")]
 	public Item hammerItem;
+	[SerializeField] public Item pipeItem;
 
 	[Header("Settings")]
 	private const float OverlapRadius = 0.5f;
-	private const int PlacementRange = 2;
+	[SerializeField] private int placementRange = 2;
 	[SerializeField] private float holdDuration = 0.5f;
-
-	private static readonly Color GhostValid   = new Color(0f,  1f, 0f,  0.45f);
-	private static readonly Color GhostInvalid = new Color(1f, 0.15f, 0.15f, 0.45f);
+	[SerializeField] private Color ghostValid = new Color(0f, 1f, 0f, 0.45f);
+	[SerializeField] private Color ghostInvalid = new Color(1f, 0.15f, 0.15f, 0.45f);
 
 	private bool canPlaceTile = true;
 	private bool canRemoveTile = true;
@@ -52,6 +59,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	private ContactFilter2D overlapFilter;
 
 	private bool isActive;
+	private Item activeItem;
 
 	private void Start()
 	{
@@ -62,11 +70,12 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 
 	public bool CanHandle(Item selectedItem)
 	{
-		return selectedItem != null && selectedItem == hammerItem;
+		return selectedItem != null && (selectedItem == hammerItem || selectedItem == pipeItem);
 	}
 
 	public void OnSelected(Item selectedItem)
 	{
+		activeItem = selectedItem;
 		isActive = true;
 		canPlaceTile = true;
 		canRemoveTile = true;
@@ -79,6 +88,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 
 	public void OnDeselected()
 	{
+		activeItem = null;
 		isActive = false;
 		enabled = false;
 		isHoldingRightClick = false;
@@ -134,6 +144,76 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 
 		ShowIndicator(gridPos);
 
+		if (activeItem == pipeItem)
+		{
+			if (GameInput.LmbDown && canPlaceTile)
+			{
+				bool canPlace = pipeTilemap != null && pipeItem.tile != null
+					&& pipeTilemap.GetTile(gridPos) == null
+					&& wallTilemap.GetTile(gridPos) == null
+					&& !IsPlaceableObjectAt(gridPos)
+					&& inventoryManager.HasItem(pipeItem.name, 1);
+				if (canPlace)
+				{
+					pipeTilemap.SetTile(gridPos, pipeItem.tile);
+					PipeNetwork.Instance?.NotifyPipePlaced(gridPos);
+					inventoryManager.RemoveItem(pipeItem.name, 1);
+					GameManager.Instance.AudioManager.PlaySound("PlaceSound");
+					canPlaceTile = false;
+				}
+			}
+			else if (GameInput.LmbUp)
+			{
+				canPlaceTile = true;
+			}
+
+			if (GameInput.RmbDown && canRemoveTile)
+			{
+				if (pipeTilemap != null && pipeTilemap.GetTile(gridPos) != null)
+				{
+					isHoldingRightClick = true;
+					rightClickHoldTime = 0f;
+					lastGridPos = gridPos;
+					lastProgressSpriteIndex = -1;
+				}
+			}
+			else if (GameInput.RmbHeld && isHoldingRightClick && gridPos == lastGridPos)
+			{
+				rightClickHoldTime += Time.deltaTime;
+				if (rightClickHoldTime >= holdDuration && canRemoveTile)
+				{
+					if (pipeTilemap != null && pipeTilemap.GetTile(gridPos) != null)
+					{
+						pipeTilemap.SetTile(gridPos, null);
+						PipeNetwork.Instance?.NotifyPipeRemoved(gridPos);
+						inventoryManager.AddItem(pipeItem, 1);
+						GameManager.Instance.AudioManager.PlaySound("PlaceSound");
+					}
+					canRemoveTile = false;
+					isHoldingRightClick = false;
+					ClearAllIndicators();
+				}
+			}
+			else if (GameInput.RmbUp)
+			{
+				isHoldingRightClick = false;
+				rightClickHoldTime = 0f;
+				canRemoveTile = true;
+				ClearProgressIndicator();
+			}
+
+			if (isHoldingRightClick && gridPos != lastGridPos)
+			{
+				isHoldingRightClick = false;
+				rightClickHoldTime = 0f;
+				lastGridPos = gridPos;
+				lastProgressSpriteIndex = -1;
+				ClearProgressIndicator();
+			}
+
+			return;
+		}
+
 		if (GameInput.LmbDown && canPlaceTile)
 		{
 			TileBase tileToPlace = buildingManager.GetSelectedTile();
@@ -142,7 +222,14 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 				TileCategory cat = buildingManager.GetTileCategory(tileToPlace);
 				bool canPlace;
 				if (cat == TileCategory.Floor)
-					canPlace = buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos);
+				{
+					var req = buildingManager.GetRequirement(tileToPlace);
+					canPlace = buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos) && EvaluatePlacementCondition(req, gridPos);
+				}
+				else if (cat == TileCategory.Pipe)
+					canPlace = pipeTilemap != null && pipeTilemap.GetTile(gridPos) == null
+						&& wallTilemap.GetTile(gridPos) == null
+						&& !IsPlaceableObjectAt(gridPos);
 				else
 					canPlace = buildingTilemap.GetTile(gridPos) != null && wallTilemap.GetTile(gridPos) == null;
 
@@ -212,6 +299,20 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		overlapFilter.useDepth = false;
 	}
 
+	private bool EvaluatePlacementCondition(TileResourceRequirement req, Vector3Int gridPos)
+	{
+		if (req == null) return true;
+		switch (req.placementCondition)
+		{
+			case PlacementCondition.WaterOnly:
+				return waterTilemap.GetTile(gridPos) == waterTile;
+			case PlacementCondition.FloorOnly:
+				return waterTilemap.GetTile(gridPos) == null;
+			default:
+				return true;
+		}
+	}
+
 	private void PlaceTile(Vector3Int gridPos, TileBase tileToPlace, TileCategory cat)
 	{
 		if (cat == TileCategory.Floor)
@@ -221,11 +322,18 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 			Vector3Int below = new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z);
 			if (waterTilemap.GetTile(below) == waterTile)
 			{
-				TileBase pillarTile = GameManager.Instance.BuildingManager.GetPillarTileForFloor(tileToPlace);
-				if (pillarTile != null)
-				{
-					betweenOceanFloorWaterTilemap.SetTile(below, pillarTile);
-				}
+				int depth = GetWaterDepthAt(gridPos);
+				GameManager.Instance.BuildingManager.PlacePillarsForFloor(gridPos, tileToPlace, betweenOceanFloorWaterTilemap, depth);
+			}
+
+			GameManager.Instance.BuildingManager.MarkFloodFillDirty();
+		}
+		else if (cat == TileCategory.Pipe)
+		{
+			if (pipeTilemap != null)
+			{
+				pipeTilemap.SetTile(gridPos, tileToPlace);
+				PipeNetwork.Instance?.NotifyPipePlaced(gridPos);
 			}
 		}
 		else
@@ -234,9 +342,10 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 				? GameManager.Instance.BuildingManager.ResolveDoorTile(tileToPlace, gridPos)
 				: tileToPlace;
 			wallTilemap.SetTile(gridPos, resolved);
+
+			GameManager.Instance.BuildingManager.MarkFloodFillDirty();
 		}
 
-		GameManager.Instance.BuildingManager.RunFloodFill();
 		GameManager.Instance.AudioManager.PlaySound("PlaceSound");
 	}
 
@@ -285,11 +394,25 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		var inventoryManager = GameManager.Instance.InventoryManager;
 		var buildingManager = GameManager.Instance.BuildingManager;
 
+		TileBase pipeTileAtPos = pipeTilemap != null ? pipeTilemap.GetTile(gridPos) : null;
+		if (pipeTileAtPos != null)
+		{
+			pipeTilemap.SetTile(gridPos, null);
+			PipeNetwork.Instance?.NotifyPipeRemoved(gridPos);
+			GameManager.Instance.AudioManager.PlaySound("PlaceSound");
+
+			var returnedFromPipe = buildingManager.GetResourcesReturnedOnDestroy(pipeTileAtPos);
+			if (returnedFromPipe != null)
+				inventoryManager.AddResources(returnedFromPipe);
+
+			return;
+		}
+
 		TileBase wallTile = wallTilemap.GetTile(gridPos);
 		if (wallTile != null)
 		{
 			wallTilemap.SetTile(gridPos, null);
-			buildingManager.RunFloodFill();
+			buildingManager.MarkFloodFillDirty();
 			GameManager.Instance.AudioManager.PlaySound("PlaceSound");
 
 			var returnedFromWall = buildingManager.GetResourcesReturnedOnDestroy(wallTile);
@@ -304,16 +427,10 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		if (floorTile != null)
 		{
 			buildingTilemap.SetTile(gridPos, null);
-			buildingManager.RunFloodFill();
+			buildingManager.MarkFloodFillDirty();
 			GameManager.Instance.AudioManager.PlaySound("PlaceSound");
 
-			Vector3Int below = new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z);
-			TileBase currentPillar = betweenOceanFloorWaterTilemap.GetTile(below);
-			TileBase expectedPillar = buildingManager.GetPillarTileForFloor(floorTile);
-			if (currentPillar != null && currentPillar == expectedPillar)
-			{
-				betweenOceanFloorWaterTilemap.SetTile(below, null);
-			}
+			buildingManager.RemovePillarsForFloor(gridPos, floorTile, betweenOceanFloorWaterTilemap);
 
 			var returnedFromFloor = buildingManager.GetResourcesReturnedOnDestroy(floorTile);
 			if (returnedFromFloor != null)
@@ -342,6 +459,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	{
 		return buildingTilemap.GetTile(gridPos) != null
 			|| wallTilemap.GetTile(gridPos) != null
+			|| (pipeTilemap != null && pipeTilemap.GetTile(gridPos) != null)
 			|| IsPlaceableObjectAt(gridPos);
 	}
 
@@ -386,6 +504,21 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 	{
 		if (ghostTilemap == null) return;
 
+		if (activeItem == pipeItem)
+		{
+			if (pipeItem == null || pipeItem.tile == null) { ClearGhostTile(); return; }
+			bool pipeCanPlace = pipeTilemap != null && pipeTilemap.GetTile(gridPos) == null
+				&& wallTilemap.GetTile(gridPos) == null
+				&& !IsPlaceableObjectAt(gridPos)
+				&& GameManager.Instance.InventoryManager.HasItem(pipeItem.name, 1);
+			if (lastGhostCell.HasValue && lastGhostCell.Value != gridPos)
+				ghostTilemap.SetTile(lastGhostCell.Value, null);
+			ghostTilemap.SetTile(gridPos, pipeItem.tile);
+			ghostTilemap.color = pipeCanPlace ? ghostValid : ghostInvalid;
+			lastGhostCell = gridPos;
+			return;
+		}
+
 		var bm = GameManager.Instance.BuildingManager;
 		TileBase selected = bm.GetSelectedTile();
 
@@ -398,7 +531,15 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		TileCategory cat = bm.GetTileCategory(selected);
 		bool canPlace;
 		if (cat == TileCategory.Floor)
-			canPlace = buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos) && bm.HasEnoughResources(selected);
+		{
+			var req = bm.GetRequirement(selected);
+			canPlace = buildingTilemap.GetTile(gridPos) == null && !IsPlaceableObjectAt(gridPos) && bm.HasEnoughResources(selected) && EvaluatePlacementCondition(req, gridPos);
+		}
+		else if (cat == TileCategory.Pipe)
+			canPlace = pipeTilemap != null && pipeTilemap.GetTile(gridPos) == null
+				&& wallTilemap.GetTile(gridPos) == null
+				&& !IsPlaceableObjectAt(gridPos)
+				&& bm.HasEnoughResources(selected);
 		else
 			canPlace = buildingTilemap.GetTile(gridPos) != null && wallTilemap.GetTile(gridPos) == null && bm.HasEnoughResources(selected);
 
@@ -410,7 +551,7 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 			ghostTilemap.SetTile(lastGhostCell.Value, null);
 
 		ghostTilemap.SetTile(gridPos, ghostTile);
-		ghostTilemap.color = canPlace ? GhostValid : GhostInvalid;
+		ghostTilemap.color = canPlace ? ghostValid : ghostInvalid;
 		lastGhostCell = gridPos;
 	}
 
@@ -464,9 +605,18 @@ public class HammerTool : MonoBehaviour, IPlayerTool
 		ClearGhostTile();
 	}
 
+	private int GetWaterDepthAt(Vector3Int pos)
+	{
+		if (oceanFloorAbyssTilemap != null && oceanFloorAbyssTilemap.HasTile(pos)) return 4;
+		if (oceanFloorDeepTilemap != null && oceanFloorDeepTilemap.HasTile(pos)) return 3;
+		if (oceanFloorMediumTilemap != null && oceanFloorMediumTilemap.HasTile(pos)) return 2;
+		if (oceanFloorShallowTilemap != null && oceanFloorShallowTilemap.HasTile(pos)) return 1;
+		return 1;
+	}
+
 	private bool IsWithinRange(Vector3Int gridPos)
 	{
 		Vector3Int playerPos = buildingTilemap.WorldToCell(transform.position);
-		return Mathf.Abs(gridPos.x - playerPos.x) <= PlacementRange && Mathf.Abs(gridPos.y - playerPos.y) <= PlacementRange;
+		return Mathf.Abs(gridPos.x - playerPos.x) <= placementRange && Mathf.Abs(gridPos.y - playerPos.y) <= placementRange;
 	}
 }

@@ -57,12 +57,10 @@ public class InventoryInputHandler : MonoBehaviour
 	private void IncreaseSelectedItemCount(int amount)
 	{
 		if (inventoryManager.SelectedSlotIndex < 0 || inventoryManager.SelectedSlotIndex >= ToolbarSlotCount)
-		{
 			return;
-		}
 
 		var slot = inventoryManager.inventorySlots[inventoryManager.SelectedSlotIndex];
-		var slotItem = slot.GetComponentInChildren<InventoryItem>();
+		var slotItem = slot.CurrentItem;
 		if (slotItem == null || !slotItem.item.stackable) return;
 
 		int maxStackedItems = inventoryManager.maxStackedItems;
@@ -81,7 +79,7 @@ public class InventoryInputHandler : MonoBehaviour
 				if (i == inventoryManager.SelectedSlotIndex) continue;
 
 				var otherSlot = inventoryManager.inventorySlots[i];
-				var otherItem = otherSlot.GetComponentInChildren<InventoryItem>();
+				var otherItem = otherSlot.CurrentItem;
 				if (otherItem != null && otherItem.item == slotItem.item && otherItem.count < maxStackedItems)
 				{
 					int spaceInOther = maxStackedItems - otherItem.count;
@@ -107,12 +105,10 @@ public class InventoryInputHandler : MonoBehaviour
 	private void DecreaseSelectedItemCount(int amount)
 	{
 		if (inventoryManager.SelectedSlotIndex < 0 || inventoryManager.SelectedSlotIndex >= ToolbarSlotCount)
-		{
 			return;
-		}
 
 		var slot = inventoryManager.inventorySlots[inventoryManager.SelectedSlotIndex];
-		var slotItem = slot.GetComponentInChildren<InventoryItem>();
+		var slotItem = slot.CurrentItem;
 		if (slotItem != null && slotItem.item.stackable && slotItem.count > amount)
 		{
 			slotItem.count -= amount;

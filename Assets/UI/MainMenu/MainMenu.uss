@@ -1,25 +1,14 @@
-.viewport {
-    flex-grow: 1;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0,0,0,0);
-}
-
-.letterbox {
+.root {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: #000000;
-    pointer-events: none;
-}
-
-.screen {
-    width: 320px;
-    height: 180px;
-    position: relative;
-    background-color: rgba(0,0,0,0);
+    -unity-font-definition: resource("Fonts/ThaleahFat_UIToolkit");
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .dim {
@@ -28,100 +17,372 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.22);
-    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.62);
 }
 
-.panel {
+.gameTitle {
+    font-size: 16px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 2px;
+}
+
+.gameSubtitle {
+    font-size: 8px;
+    -unity-text-align: middle-center;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 14px;
+}
+
+/* ---- Main Panel ---- */
+
+.mainPanel {
+    align-items: center;
+    flex-direction: column;
+    display: flex;
+}
+
+/* ---- Overlay Panels (world select, new world, options) ---- */
+
+.overlayPanel {
     position: absolute;
     left: 0;
-    right: 0;
     top: 0;
+    right: 0;
     bottom: 0;
     align-items: center;
     justify-content: center;
-    padding-top: 28px;
+    display: none;
 }
 
-.mainPanel { display: flex; }
-.optionsPanel { display: none; }
+.menuBox {
+    width: 280px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    align-items: center;
+    flex-direction: column;
+    background-image: resource("UI/Sprites/ui_background");
+    background-repeat: no-repeat;
+    background-position: center center;
+    -unity-slice-left: 5;
+    -unity-slice-right: 5;
+    -unity-slice-top: 5;
+    -unity-slice-bottom: 5;
+    -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
+}
+
+.panelTitle {
+    font-size: 12px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 8px;
+}
+
+.optionsHint {
+    font-size: 8px;
+    -unity-text-align: middle-center;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 12px;
+}
+
+/* ---- Slot List ---- */
+
+.slotList {
+    flex-direction: column;
+    align-items: stretch;
+    width: 264px;
+    margin-bottom: 8px;
+}
+
+.slotCard {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 4px;
+    height: 20px;
+    flex-shrink: 0;
+    background-color: rgba(0, 0, 0, 0.50);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.12);
+    border-right-color: rgba(255, 255, 255, 0.12);
+    border-top-color: rgba(255, 255, 255, 0.12);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.slotCard:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-left-color: rgba(255, 255, 255, 0.35);
+    border-right-color: rgba(255, 255, 255, 0.35);
+    border-top-color: rgba(255, 255, 255, 0.35);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+}
+
+.slotCardName {
+    font-size: 8px;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.95);
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+.slotCardInfo {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.50);
+    -unity-text-align: middle-right;
+    flex-shrink: 0;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+.slotCardEmpty {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.30);
+    -unity-text-align: middle-center;
+    flex-grow: 1;
+}
+
+/* ---- New World Form ---- */
+
+.fieldLabel {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 3px;
+    align-self: flex-start;
+    flex-shrink: 0;
+}
+
+.worldNameField {
+    width: 264px;
+    height: 16px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+    background-color: rgba(0, 0, 0, 0.50);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.30);
+    border-right-color: rgba(255, 255, 255, 0.30);
+    border-top-color: rgba(255, 255, 255, 0.30);
+    border-bottom-color: rgba(255, 255, 255, 0.30);
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 0;
+    padding-bottom: 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 8px;
+    -unity-text-align: middle-left;
+}
+
+.worldNameField:focus {
+    border-left-color: rgba(255, 255, 255, 0.60);
+    border-right-color: rgba(255, 255, 255, 0.60);
+    border-top-color: rgba(255, 255, 255, 0.60);
+    border-bottom-color: rgba(255, 255, 255, 0.60);
+}
+
+.worldNameField > .unity-base-field__input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 8px;
+    -unity-font-definition: resource("Fonts/ThaleahFat_UIToolkit");
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+}
+
+.sizeRow {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 8px;
+    width: 264px;
+    flex-shrink: 0;
+}
+
+.pxBtn.sizePxBtn {
+    width: 42px;
+    margin-bottom: 0;
+    margin-right: 4px;
+}
+
+#sizeHugeBtn {
+    margin-right: 0;
+}
+
+.pxBtn.sizeSelected {
+    background-image: resource("UI/Sprites/ui_button_select");
+    -unity-slice-left: 4;
+    -unity-slice-right: 4;
+    -unity-slice-top: 4;
+    -unity-slice-bottom: 4;
+    -unity-slice-scale: 1px;
+}
+
+.pxBtn.sizeSelected:hover {
+    background-image: resource("UI/Sprites/ui_button_select");
+}
+
+.pxBtn.sizeSelected .pxBtnLabel,
+.pxBtn.sizeSelected:hover .pxBtnLabel {
+    color: #faf5d3;
+}
+
+.createRow {
+    flex-direction: row;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.createRow .pxBtn {
+    margin-bottom: 0;
+    margin-right: 4px;
+}
+
+#cancelNewWorldBtn {
+    margin-right: 0;
+}
+
+/* ---- Pixel Button ---- */
 
 .pxBtn {
-    width: 80px;
+    width: 96px;
     height: 16px;
     position: relative;
-    flex-direction: row;
-    align-items: stretch;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     padding: 0;
     margin: 0;
     margin-bottom: 8px;
-    color: rgba(0, 0, 0, 0);
-}
-
-#quitBtn { margin-bottom: 0; }
-
-.capLeft {
-    width: 16px;
-    height: 16px;
     flex-shrink: 0;
-    background-image: resource("UI/MainMenu/btn_left_idle");
+    background-image: resource("UI/Sprites/ui_button_normal");
     background-repeat: no-repeat;
-    background-position: left center;
-    background-size: 16px 16px;
+    background-position: center center;
+    -unity-slice-left: 4;
+    -unity-slice-right: 4;
+    -unity-slice-top: 4;
+    -unity-slice-bottom: 4;
+    -unity-slice-scale: 1px;
 }
 
-.mid {
-    flex-grow: 1;
-    height: 16px;
-    background-image: resource("UI/MainMenu/btn_mid_idle");
-    background-repeat: repeat;
-    background-position: center;
-    background-size: 16px 16px;
+.pxBtn:hover {
+    background-image: resource("UI/Sprites/ui_button_highlight");
 }
 
-.capRight {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    background-image: resource("UI/MainMenu/btn_right_idle");
-    background-repeat: no-repeat;
-    background-position: right center;
-    background-size: 16px 16px;
+.pxBtn:active {
+    background-image: resource("UI/Sprites/ui_button_select");
 }
 
-.pxBtn:hover .capLeft  { background-image: resource("UI/MainMenu/btn_left_hover"); }
-.pxBtn:hover .mid      { background-image: resource("UI/MainMenu/btn_mid_hover"); }
-.pxBtn:hover .capRight { background-image: resource("UI/MainMenu/btn_right_hover"); }
+.pxBtn:disabled {
+    opacity: 0.5;
+}
 
-.pxBtn:active .capLeft  { background-image: resource("UI/MainMenu/btn_left_pressed"); }
-.pxBtn:active .mid      { background-image: resource("UI/MainMenu/btn_mid_pressed"); }
-.pxBtn:active .capRight { background-image: resource("UI/MainMenu/btn_right_pressed"); }
+#quitBtn {
+    margin-bottom: 0;
+}
 
-.pxBtn:disabled .capLeft  { background-image: resource("UI/MainMenu/btn_left_disabled"); }
-.pxBtn:disabled .mid      { background-image: resource("UI/MainMenu/btn_mid_disabled"); }
-.pxBtn:disabled .capRight { background-image: resource("UI/MainMenu/btn_right_disabled"); }
+#backFromWorldSelectBtn {
+    margin-bottom: 0;
+}
+
+#backFromOptionsBtn {
+    margin-bottom: 0;
+}
+
+.capLeft, .mid, .capRight {
+    display: none;
+}
 
 .pxBtnLabel {
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
-    bottom: 0;
-    unity-text-align: middle-center;
+    bottom: 2px;
+    -unity-text-align: middle-center;
     font-size: 8px;
-    unity-font-style: bold;
-    color: rgba(255, 255, 255, 0.95);
-    pointer-events: none;
+    -unity-font-style: bold;
+    color: #402822;
+}
+
+.pxBtn:hover .pxBtnLabel {
+    color: #faf5d3;
+}
+
+.pxBtn:active .pxBtnLabel {
+    color: #faf5d3;
 }
 
 .pxBtn:disabled .pxBtnLabel {
-    color: rgba(255, 255, 255, 0.65);
+    color: #402822;
 }
 
-.pxBtn:focus {
-    outline-width: 2px;
-    outline-color: rgba(255, 255, 255, 0.65);
-    outline-offset: 2px;
+/* ---- Slot Card Delete Button ---- */
+
+.slotCardDeleteBtn {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 10px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: resource("Fonts/ThaleahFat_UIToolkit");
+}
+
+.slotCardDeleteBtn:hover {
+    background-color: rgba(200, 60, 60, 0.35);
+    color: rgba(255, 130, 130, 0.95);
+}
+
+/* ---- Confirm Delete Dialog ---- */
+
+.confirmDeleteMsg {
+    font-size: 9px;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.90);
+    -unity-text-align: middle-center;
+    margin-bottom: 4px;
+}
+
+.confirmDeleteWarn {
+    font-size: 7px;
+    color: rgba(255, 160, 80, 0.90);
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+}
+
+#cancelDeleteBtn {
+    margin-right: 0;
+}
+
+/* ---- Version Label ---- */
+
+.versionLabel {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.30);
+    -unity-text-align: lower-right;
 }

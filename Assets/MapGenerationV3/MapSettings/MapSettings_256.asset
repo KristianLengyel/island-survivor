@@ -58,10 +58,11 @@ MonoBehaviour:
   pillarTile: {fileID: 11400000, guid: e1a5eaad8fabc064b9621782eb1f525d, type: 2}
   waterTile: {fileID: 11400000, guid: f3f8497b1614f43d6915ff827b0bf27a, type: 2}
   oceanFloorShallowTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
-  oceanFloorMediumTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
-  oceanFloorDeepTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
-  oceanFloorAbyssTile: {fileID: 11400000, guid: f67eec6a15228be4389a761461d8593f, type: 2}
+  oceanFloorMediumTile: {fileID: 11400000, guid: 0ed2f3aac0b76a34cb9ff00da2108f84, type: 2}
+  oceanFloorDeepTile: {fileID: 11400000, guid: 0ed2f3aac0b76a34cb9ff00da2108f84, type: 2}
+  oceanFloorAbyssTile: {fileID: 11400000, guid: 0ed2f3aac0b76a34cb9ff00da2108f84, type: 2}
   seaweedTile: {fileID: 11400000, guid: 6054c8eb3928bd947bc50ea496952d25, type: 2}
   biomeDefinitions:
   - {fileID: 11400000, guid: 4242a6d1ae54fe349b08097a8f782764, type: 2}
+  - {fileID: 11400000, guid: 529184f248b1ee94ebebaf3e4020761e, type: 2}
   waterOverlapLandInland: 0

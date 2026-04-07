@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1568140943208968953
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1000186176095791093}
+  m_Layer: 0
+  m_Name: ShadowPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1000186176095791093
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1568140943208968953}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.006, y: -0.311, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 268036326873124479}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1874243553758067839
 GameObject:
   m_ObjectHideFlags: 0
@@ -107,7 +138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7914695705487839388
 Transform:
   m_ObjectHideFlags: 0
@@ -194,6 +225,7 @@ GameObject:
   - component: {fileID: 2494627199100717359}
   - component: {fileID: 1011938086694877382}
   - component: {fileID: 9098422216880126270}
+  - component: {fileID: -1067615769312063988}
   m_Layer: 0
   m_Name: Cactus_3
   m_TagString: Untagged
@@ -216,6 +248,7 @@ Transform:
   m_Children:
   - {fileID: 7914695705487839388}
   - {fileID: 1324101725297358467}
+  - {fileID: 1000186176095791093}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &2494627199100717359
@@ -329,10 +362,28 @@ MonoBehaviour:
   interactionRange: 2
   outlineRenderer: {fileID: 5296050746593786716}
   hitSpriteRenderer: {fileID: 2494627199100717359}
-  requiredTool: {fileID: 0}
+  requiredTool: {fileID: 11400000, guid: d81b0d085d7f1a24fb72a90e96af294b, type: 2}
   maxHealth: 2
   cooldown: 0.5
   staminaCostPerHit: 0
   breakStageSprites: []
   drops: []
   showInventoryNotification: 1
+--- !u!114 &-1067615769312063988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6395853453322164192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94e1534054da5f2429b987a96db08562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FakeShadow2D
+  sourceRenderer: {fileID: 2494627199100717359}
+  shadowPivot: {fileID: 1000186176095791093}
+  customShadowSprite: {fileID: 0}
+  autoDetectPivot: 0
+  pivotOffset: {x: 0, y: 0}
+  sortingOrderOffset: -2

@@ -1,16 +1,20 @@
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 public class MapDisplayManager : MonoBehaviour
 {
-	[Header("UI Components")]
-	public GameObject mapUI;
-	public RawImage mapRawImage;
-	public Image playerMarker;
+	[Header("UI")]
+	[SerializeField] private UIDocument uiDocument;
+	[SerializeField] private Sprite playerMarkerSprite;
 
 	[Header("Exploration Settings")]
 	public float revealRadius = 20f;
 	public float updateInterval = 1f;
+
+	[Header("Zoom Settings")]
+	public float minZoom = 1f;
+	public float maxZoom = 5f;
+	public float zoomSpeed = 0.5f;
 
 	[Header("Player Reference")]
 	public Transform playerTransform;
@@ -19,11 +23,24 @@ public class MapDisplayManager : MonoBehaviour
 	private bool[,] visitedTiles;
 	private MapManager mapManager;
 
+	private VisualElement mapRoot;
+	private VisualElement mapViewport;
+	private VisualElement mapCanvas;
+	private VisualElement playerMarkerEl;
+
 	[SerializeField] private bool isMapOpen = false;
 
 	private bool isFullMapRevealed = false;
 	private int worldSize;
 	private float lastUpdateTime;
+
+	private float zoomLevel = 1f;
+	private Vector2 panOffset = Vector2.zero;
+	private bool isDragging = false;
+	private Vector2 lastPointerPos;
+	private int dragPointerId = -1;
+
+	private const float viewportSize = 196f;
 
 	private void Start()
 	{
@@ -32,12 +49,20 @@ public class MapDisplayManager : MonoBehaviour
 
 	private bool TryInit()
 	{
-		if (mapTexture != null) return true; // already initialized
+		if (mapTexture != null) return true;
 
-		if (mapUI == null || mapRawImage == null || playerMarker == null) return false;
+		if (uiDocument == null) return false;
 
 		mapManager = MapManager.Instance;
 		if (mapManager == null || (worldSize = mapManager.worldSize) <= 0) return false;
+
+		var root = uiDocument.rootVisualElement;
+		mapRoot = root.Q<VisualElement>("map-root");
+		mapViewport = root.Q<VisualElement>("map-viewport");
+		mapCanvas = root.Q<VisualElement>("map-canvas");
+		playerMarkerEl = root.Q<VisualElement>("map-player-marker");
+
+		if (mapRoot == null || mapViewport == null || mapCanvas == null || playerMarkerEl == null) return false;
 
 		visitedTiles = new bool[worldSize, worldSize];
 		mapTexture = new Texture2D(worldSize, worldSize, TextureFormat.RGBA32, false)
@@ -52,22 +77,95 @@ public class MapDisplayManager : MonoBehaviour
 
 		mapTexture.SetPixels(initialColors);
 		mapTexture.Apply();
-		mapRawImage.texture = mapTexture;
 
-		mapRawImage.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-		mapRawImage.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-		mapRawImage.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-		mapRawImage.rectTransform.anchoredPosition = Vector2.zero;
+		mapCanvas.style.backgroundImage = new StyleBackground(mapTexture);
 
-		playerMarker.transform.SetParent(mapRawImage.transform, false);
-		playerMarker.rectTransform.anchoredPosition = Vector2.zero;
+		if (playerMarkerSprite != null)
+			playerMarkerEl.style.backgroundImage = new StyleBackground(playerMarkerSprite);
+
+		zoomLevel = minZoom;
+		panOffset = Vector2.zero;
+		ApplyZoomPan();
+
+		mapViewport.RegisterCallback<WheelEvent>(OnWheel);
+		mapViewport.RegisterCallback<PointerDownEvent>(OnPointerDown);
+		mapViewport.RegisterCallback<PointerMoveEvent>(OnPointerMove);
+		mapViewport.RegisterCallback<PointerUpEvent>(OnPointerUp);
 
 		isMapOpen = false;
-		mapUI.SetActive(false);
+		mapRoot.style.display = DisplayStyle.None;
 
 		EnsurePlayer();
 		enabled = true;
 		return true;
+	}
+
+	private void OnWheel(WheelEvent evt)
+	{
+		float delta = -evt.delta.y * zoomSpeed * 0.1f;
+		float newZoom = Mathf.Clamp(zoomLevel + delta, minZoom, maxZoom);
+		if (Mathf.Approximately(newZoom, zoomLevel)) return;
+
+		Vector2 mouseInViewport = evt.localMousePosition;
+		float oldCanvasSize = viewportSize * zoomLevel;
+		float newCanvasSize = viewportSize * newZoom;
+
+		float normX = (-panOffset.x + mouseInViewport.x) / oldCanvasSize;
+		float normY = (-panOffset.y + mouseInViewport.y) / oldCanvasSize;
+
+		panOffset.x = -(normX * newCanvasSize - mouseInViewport.x);
+		panOffset.y = -(normY * newCanvasSize - mouseInViewport.y);
+
+		zoomLevel = newZoom;
+		ClampPan();
+		ApplyZoomPan();
+		evt.StopPropagation();
+	}
+
+	private void OnPointerDown(PointerDownEvent evt)
+	{
+		if (evt.button != 0) return;
+		isDragging = true;
+		lastPointerPos = evt.position;
+		dragPointerId = evt.pointerId;
+		mapViewport.CapturePointer(evt.pointerId);
+		evt.StopPropagation();
+	}
+
+	private void OnPointerMove(PointerMoveEvent evt)
+	{
+		if (!isDragging) return;
+		Vector2 delta = (Vector2)evt.position - lastPointerPos;
+		lastPointerPos = evt.position;
+		panOffset += delta;
+		ClampPan();
+		ApplyZoomPan();
+	}
+
+	private void OnPointerUp(PointerUpEvent evt)
+	{
+		if (!isDragging) return;
+		isDragging = false;
+		mapViewport.ReleasePointer(evt.pointerId);
+		dragPointerId = -1;
+	}
+
+	private void ClampPan()
+	{
+		float canvasSize = viewportSize * zoomLevel;
+		float maxPan = canvasSize - viewportSize;
+		panOffset.x = Mathf.Clamp(panOffset.x, -maxPan, 0f);
+		panOffset.y = Mathf.Clamp(panOffset.y, -maxPan, 0f);
+	}
+
+	private void ApplyZoomPan()
+	{
+		if (mapCanvas == null) return;
+		float canvasSize = viewportSize * zoomLevel;
+		mapCanvas.style.width = canvasSize;
+		mapCanvas.style.height = canvasSize;
+		mapCanvas.style.left = panOffset.x;
+		mapCanvas.style.top = panOffset.y;
 	}
 
 	private void Update()
@@ -83,8 +181,7 @@ public class MapDisplayManager : MonoBehaviour
 				ResetMap();
 		}
 
-		if (!EnsurePlayer())
-			return;
+		if (!EnsurePlayer()) return;
 
 		if (Time.time - lastUpdateTime >= updateInterval)
 		{
@@ -95,31 +192,36 @@ public class MapDisplayManager : MonoBehaviour
 		if (isMapOpen)
 		{
 			Vector2Int playerTilePos = WorldToTilePosition(playerTransform.position);
-			RectTransform mapRect = mapRawImage.rectTransform;
-			float mapWidth = mapRect.rect.width;
-			float mapHeight = mapRect.rect.height;
+			float canvasSize = viewportSize * zoomLevel;
 
 			float normalizedX = (float)playerTilePos.x / worldSize;
 			float normalizedY = (float)playerTilePos.y / worldSize;
 
-			float uiX = (normalizedX - 0.5f) * mapWidth;
-			float uiY = (normalizedY - 0.5f) * mapHeight;
+			float markerW = playerMarkerEl.layout.width;
+			float markerH = playerMarkerEl.layout.height;
 
-			playerMarker.rectTransform.anchoredPosition = new Vector2(uiX, uiY);
-			playerMarker.rectTransform.rotation = Quaternion.Euler(0, 0, -playerTransform.eulerAngles.y);
+			playerMarkerEl.style.left = normalizedX * canvasSize - markerW * 0.5f;
+			playerMarkerEl.style.top = (1f - normalizedY) * canvasSize - markerH * 0.5f;
+			playerMarkerEl.style.rotate = new Rotate(Angle.Degrees(-playerTransform.eulerAngles.z));
 		}
 	}
 
 	public void OpenMap()
 	{
 		isMapOpen = true;
-		if (mapUI != null) mapUI.SetActive(true);
+		if (mapRoot != null)
+			mapRoot.style.display = DisplayStyle.Flex;
 	}
 
 	public void CloseMap()
 	{
 		isMapOpen = false;
-		if (mapUI != null) mapUI.SetActive(false);
+		if (isDragging && dragPointerId >= 0 && mapViewport != null)
+			mapViewport.ReleasePointer(dragPointerId);
+		isDragging = false;
+		dragPointerId = -1;
+		if (mapRoot != null)
+			mapRoot.style.display = DisplayStyle.None;
 	}
 
 	public void ToggleMap()
@@ -128,15 +230,11 @@ public class MapDisplayManager : MonoBehaviour
 		else OpenMap();
 	}
 
-	public bool IsMapOpen()
-	{
-		return isMapOpen;
-	}
+	public bool IsMapOpen() => isMapOpen;
 
 	private bool EnsurePlayer()
 	{
-		if (playerTransform != null)
-			return true;
+		if (playerTransform != null) return true;
 
 		GameObject go = GameObject.FindGameObjectWithTag("Player");
 		if (go != null)
@@ -184,7 +282,10 @@ public class MapDisplayManager : MonoBehaviour
 		}
 
 		if (updated)
+		{
 			mapTexture.Apply();
+			mapCanvas.style.backgroundImage = new StyleBackground(mapTexture);
+		}
 	}
 
 	private Vector2Int WorldToTilePosition(Vector3 worldPos)
@@ -207,6 +308,7 @@ public class MapDisplayManager : MonoBehaviour
 			}
 		}
 		mapTexture.Apply();
+		mapCanvas.style.backgroundImage = new StyleBackground(mapTexture);
 	}
 
 	private void ResetMap()
@@ -220,6 +322,7 @@ public class MapDisplayManager : MonoBehaviour
 			}
 		}
 		mapTexture.Apply();
+		mapCanvas.style.backgroundImage = new StyleBackground(mapTexture);
 	}
 
 	public void ResetForNewMap()
@@ -232,6 +335,8 @@ public class MapDisplayManager : MonoBehaviour
 		visitedTiles = null;
 		worldSize = 0;
 		isFullMapRevealed = false;
+		zoomLevel = minZoom;
+		panOffset = Vector2.zero;
 	}
 
 	public PlayerMapData CapturePlayerMapState()
@@ -261,7 +366,7 @@ public class MapDisplayManager : MonoBehaviour
 	public void RestorePlayerMapState(PlayerMapData data)
 	{
 		if (data == null || data.visited == null) return;
-		if (mapTexture == null && !TryInit()) return; // retry init if MapManager is ready now
+		if (mapTexture == null && !TryInit()) return;
 		if (mapTexture == null) return;
 		if (data.worldSize != worldSize) return;
 
@@ -289,5 +394,6 @@ public class MapDisplayManager : MonoBehaviour
 		}
 
 		mapTexture.Apply();
+		mapCanvas.style.backgroundImage = new StyleBackground(mapTexture);
 	}
 }

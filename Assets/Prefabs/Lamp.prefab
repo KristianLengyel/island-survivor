@@ -94,10 +94,11 @@ GameObject:
   m_Component:
   - component: {fileID: 2731972476479282507}
   - component: {fileID: 1565399967053814252}
+  - component: {fileID: 813815980331022004}
   - component: {fileID: 9165215257689062724}
   - component: {fileID: 9116487351965638296}
-  - component: {fileID: 813815980331022004}
   - component: {fileID: 1645945634582979422}
+  - component: {fileID: 2393688110077645239}
   m_Layer: 0
   m_Name: Lamp
   m_TagString: Untagged
@@ -119,6 +120,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8068105121713830033}
+  - {fileID: 210619723452902431}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &1565399967053814252
@@ -180,6 +182,26 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &813815980331022004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4931084173743815726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e16385fa4f6cb9d43bc4d8cffdf5fff1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lampOffSprite: {fileID: 323171950, guid: f79a77a273be8c949b86146d72cd978d, type: 3}
+  lampOnSprite: {fileID: -1948703447, guid: f79a77a273be8c949b86146d72cd978d, type: 3}
+  turnOnTime: 0.5
+  turnOffTime: 0.958
+  flickerChance: 0.1
+  flickerOnDuration: 0.5
+  flickerOffDuration: 0.3
+  flickerFinalOnDelay: 0.5
 --- !u!114 &9165215257689062724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,26 +261,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.6217282, y: 0.25532734}
   m_EdgeRadius: 0
---- !u!114 &813815980331022004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4931084173743815726}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e16385fa4f6cb9d43bc4d8cffdf5fff1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lampOffSprite: {fileID: 323171950, guid: f79a77a273be8c949b86146d72cd978d, type: 3}
-  lampOnSprite: {fileID: -1948703447, guid: f79a77a273be8c949b86146d72cd978d, type: 3}
-  turnOnTime: 0.5
-  turnOffTime: 0.958
-  flickerChance: 0.1
-  flickerOnDuration: 0.5
-  flickerOffDuration: 0.3
-  flickerFinalOnDelay: 0.5
 --- !u!114 &1645945634582979422
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -272,3 +274,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableEntity
   uniqueId: e7d0ea3eb7ad49f08429576a15c7c2cc
+--- !u!114 &2393688110077645239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4931084173743815726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94e1534054da5f2429b987a96db08562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FakeShadow2D
+  sourceRenderer: {fileID: 1565399967053814252}
+  shadowPivot: {fileID: 210619723452902431}
+  customShadowSprite: {fileID: 0}
+  autoDetectPivot: 0
+  pivotOffset: {x: 0, y: 0}
+  sortingOrderOffset: -2
+--- !u!1 &7813380916719859108
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 210619723452902431}
+  m_Layer: 0
+  m_Name: ShadowPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &210619723452902431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7813380916719859108}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.362, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2731972476479282507}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

@@ -3,9 +3,7 @@ using UnityEngine;
 
 public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 {
-	[Header("Chest UI")]
-	[SerializeField] private GameObject chestUI;
-	[SerializeField] private InventorySlot[] chestSlots;
+	private const int chestSlotCount = 21;
 
 	[Header("Sprites")]
 	public Sprite normalSprite;
@@ -16,6 +14,9 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 	private SpriteRenderer spriteRenderer;
 	private bool isOpen = false;
 	private InventoryContainer container;
+	private InventorySlot[] chestSlots;
+
+	public InventorySlot[] ChestSlots => chestSlots;
 
 	private void EnsureContainer()
 	{
@@ -31,21 +32,13 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 	{
 		spriteRenderer = GetComponent<SpriteRenderer>();
 
-		if (chestUI == null)
-		{
-			Transform uiTransform = transform.Find("ChestUI");
-			if (uiTransform != null)
-				chestUI = uiTransform.gameObject;
-		}
-
-		if ((chestSlots == null || chestSlots.Length == 0) && chestUI != null)
-			chestSlots = chestUI.GetComponentsInChildren<InventorySlot>(true);
+		chestSlots = new InventorySlot[chestSlotCount];
+		for (int i = 0; i < chestSlotCount; i++)
+			chestSlots[i] = new InventorySlot();
 	}
 
 	private void Start()
 	{
-		if (chestUI != null) chestUI.SetActive(false);
-
 		if (spriteRenderer != null && normalSprite != null)
 			spriteRenderer.sprite = normalSprite;
 
@@ -68,20 +61,20 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 
 		isOpen = !isOpen;
 
-		if (chestUI != null) chestUI.SetActive(isOpen);
-
 		if (isOpen)
 		{
 			CurrentOpenChest = this;
 			GameManager.Instance.InventoryManager.InventoryLocked = true;
 			GameManager.Instance.InventoryManager.ShowInventory(true, fromChest: true);
+			GameManager.Instance.InventoryManager.OpenChestPanel(this);
 		}
 		else
 		{
 			if (CurrentOpenChest == this) CurrentOpenChest = null;
+			GameManager.Instance.InventoryManager.CloseChestPanel(this);
 			GameManager.Instance.InventoryManager.InventoryLocked = false;
 			GameManager.Instance.InventoryManager.ShowInventory(false, fromChest: true);
-			if (Tooltip.Instance != null) Tooltip.Instance.HideTooltip();
+			Tooltip.Instance?.HideTooltip();
 		}
 	}
 
@@ -97,8 +90,7 @@ public class Chest : MonoBehaviour, IInteractable, ISaveableComponent
 	{
 		if (chestSlots == null) return false;
 		foreach (var slot in chestSlots)
-			if (slot != null && slot.GetComponentInChildren<InventoryItem>() != null)
-				return true;
+			if (slot != null && !slot.IsEmpty) return true;
 		return false;
 	}
 

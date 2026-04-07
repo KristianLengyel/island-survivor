@@ -275,7 +275,7 @@ public class Planter : MonoBehaviour, IInteractable, ISaveableComponent
 
 		var selectedItem = inventoryManager?.GetSelectedItem();
 		var slotItem = inventoryManager?.inventorySlots[inventoryManager.SelectedSlotIndex]
-			.GetComponentInChildren<WaterContainerInventoryItem>();
+			.CurrentItem as WaterContainerInventoryItem;
 
 		bool canHighlight = isMature || (selectedItem != null && (
 			(!isPlanted && plantableSet != null && plantableSet.Contains(selectedItem.name)) ||
@@ -290,7 +290,7 @@ public class Planter : MonoBehaviour, IInteractable, ISaveableComponent
 	{
 		var selectedItem = inventoryManager?.GetSelectedItem();
 		var slotItem = inventoryManager?.inventorySlots[inventoryManager.SelectedSlotIndex]
-			.GetComponentInChildren<WaterContainerInventoryItem>();
+			.CurrentItem as WaterContainerInventoryItem;
 
 		if (isMature)
 		{

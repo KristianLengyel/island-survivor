@@ -35,6 +35,7 @@
     -unity-slice-top: 5;
     -unity-slice-bottom: 5;
     -unity-slice-scale: 1px;
+    -unity-slice-type: tiled;
     font-size: 8px;
     color: rgba(255, 255, 255, 1);
     -unity-text-align: middle-center;

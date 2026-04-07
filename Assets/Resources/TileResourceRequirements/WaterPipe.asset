@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e97f9593a1513e4281614191b793cc4, type: 3}
+  m_Name: WaterPipe
+  m_EditorClassIdentifier: 
+  tileName: Water Pipe
+  tile: {fileID: 11400000, guid: 5f8b3e57f3ba9734a90c683f76ee0a21, type: 2}
+  altTile: {fileID: 0}
+  pillarTile: {fileID: 0}
+  menuIcon: {fileID: 2097472320, guid: 79b0c0bbf2ad7b44eb58feecacd25219, type: 3}
+  tileCategory: 3
+  resourceRequirements:
+  - resource: {fileID: 11400000, guid: 18969ad4231826848876b70b7e6d497a, type: 2}
+    amount: 1
+  resourcesReturnedOnDestroy:
+  - resource: {fileID: 11400000, guid: 18969ad4231826848876b70b7e6d497a, type: 2}
+    amount: 1

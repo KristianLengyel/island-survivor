@@ -3,14 +3,12 @@ using UnityEngine;
 public class CraftingManager : MonoBehaviour
 {
 	[SerializeField] public InventoryManager inventoryManager;
-	private RecipeDetailsUI currentRecipeDetailsUI;
+	private CraftingMenu currentCraftingMenu;
 
 	private void Awake()
 	{
 		if (inventoryManager == null)
-		{
 			inventoryManager = GameManager.Instance.InventoryManager;
-		}
 	}
 
 	public bool CanCraft(CraftingRecipe recipe)
@@ -58,22 +56,21 @@ public class CraftingManager : MonoBehaviour
 			}
 
 			if (!string.IsNullOrEmpty(chosenResource))
-			{
 				inventoryManager.RemoveItem(chosenResource, requirement.amount);
-			}
 		}
 
 		inventoryManager.AddItem(recipe.result);
 		AudioManager.instance.PlaySound("CraftItem");
 
-		if (currentRecipeDetailsUI != null)
-		{
-			currentRecipeDetailsUI.UpdateButtonInteractable();
-		}
+		currentCraftingMenu?.UpdateCraftButton();
+	}
+
+	public void RegisterCraftingMenu(CraftingMenu menu)
+	{
+		currentCraftingMenu = menu;
 	}
 
 	public void RegisterRecipeDetailsUI(RecipeDetailsUI ui)
 	{
-		currentRecipeDetailsUI = ui;
 	}
 }

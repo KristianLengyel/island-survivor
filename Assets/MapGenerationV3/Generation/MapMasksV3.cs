@@ -250,6 +250,51 @@ public static class MapMasksV3
 		q[qe++] = to;
 	}
 
+	public static void NormalizeBiomesPerComponent(MapDataV3 d, MapWorkspaceV3 w)
+	{
+		int n = d.size * d.size;
+		int biomeCount = w.biomeScratch.Length;
+
+		for (int i = 0; i < n; i++) w.labels[i] = 0;
+		w.EnsureComponentCapacity(8);
+		for (int i = 0; i < w.componentCounts.Length; i++) w.componentCounts[i] = 0;
+
+		int labelCount = 0;
+		for (int start = 0; start < n; start++)
+		{
+			if (d.land[start] == 0 || w.labels[start] != 0) continue;
+			labelCount++;
+			w.EnsureComponentCapacity(labelCount);
+			FloodLabel(d.land, w.labels, d.size, start, labelCount, w.bfsQueue, true);
+		}
+
+		int voteSlots = (labelCount + 1) * biomeCount;
+		for (int i = 0; i < voteSlots; i++) w.biomeQueue[i] = 0;
+
+		for (int i = 0; i < n; i++)
+		{
+			int lbl = w.labels[i];
+			if (lbl == 0) continue;
+			int b = d.biome[i];
+			if (b < biomeCount)
+				w.biomeQueue[lbl * biomeCount + b]++;
+		}
+
+		for (int i = 0; i < n; i++)
+		{
+			int lbl = w.labels[i];
+			if (lbl == 0) continue;
+			int base_ = lbl * biomeCount;
+			int bestBiome = 0, bestCount = -1;
+			for (int b = 0; b < biomeCount; b++)
+			{
+				int cnt = w.biomeQueue[base_ + b];
+				if (cnt > bestCount) { bestCount = cnt; bestBiome = b; }
+			}
+			d.biome[i] = (byte)bestBiome;
+		}
+	}
+
 	private static int FloodLabel(byte[] land, int[] labels, int size, int start,
 		int label, int[] q, bool forLand)
 	{

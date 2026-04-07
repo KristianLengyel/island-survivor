@@ -28,4 +28,10 @@ public class GameManager : MonoBehaviour
 		}
 		Instance = this;
 	}
+
+	private void OnDestroy()
+	{
+		if (ReferenceEquals(Instance, this))
+			Instance = null;
+	}
 }

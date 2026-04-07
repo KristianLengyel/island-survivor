@@ -337,7 +337,7 @@ ScriptedImporter:
       cellRect:
         x: 0
         y: 0
-        width: 168
+        width: 236
         height: 24
       spriteId: 0e753d29a907bb446a92cbf9895b494f
     linkedCells: []
@@ -373,5 +373,5 @@ ScriptedImporter:
   generatePhysicsShape: 0
   secondarySpriteTextures: []
   spritePackingTag: 
-  canvasSize: {x: 168, y: 24}
+  canvasSize: {x: 236, y: 24}
   previousTextureSize: {x: 256, y: 32}

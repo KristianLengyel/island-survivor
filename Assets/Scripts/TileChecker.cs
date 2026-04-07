@@ -15,6 +15,14 @@ public class TileChecker : MonoBehaviour
 	public Tilemap oceanFloorDeepTilemap;
 	public Tilemap oceanFloorAbyssTilemap;
 
+	public int GetWaterDepth(Vector3Int cellPosition)
+	{
+		if (oceanFloorAbyssTilemap != null && oceanFloorAbyssTilemap.HasTile(cellPosition)) return 4;
+		if (oceanFloorDeepTilemap != null && oceanFloorDeepTilemap.HasTile(cellPosition)) return 3;
+		if (oceanFloorMediumTilemap != null && oceanFloorMediumTilemap.HasTile(cellPosition)) return 2;
+		return 1;
+	}
+
 	public string CheckTileType(Vector3 worldPosition)
 	{
 		Vector3Int cellPosition = waterTilemap.WorldToCell(worldPosition);

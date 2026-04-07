@@ -16,6 +16,7 @@ public class BuildingManager : MonoBehaviour
 	private Vector3Int gridOrigin;
 	private int gridWidth;
 	private int gridHeight;
+	private bool _floodFillDirty;
 
 	private void Awake()
 	{
@@ -109,6 +110,56 @@ public class BuildingManager : MonoBehaviour
 		return req?.pillarTile;
 	}
 
+	public void PlacePillarsForFloor(Vector3Int gridPos, TileBase floorTile, Tilemap pillarTilemap, int depth)
+	{
+		TileResourceRequirement req = GetRequirement(floorTile);
+		if (req == null || pillarTilemap == null) return;
+
+		TileBase fallback = req.pillarTile;
+		TileBase topBottomTile = req.pillarTopBottomTile != null ? req.pillarTopBottomTile : fallback;
+		TileBase topTile = req.pillarTopTile != null ? req.pillarTopTile : (req.pillarMiddleTile != null ? req.pillarMiddleTile : fallback);
+		TileBase middleTile = req.pillarMiddleTile != null ? req.pillarMiddleTile : fallback;
+		TileBase endTile = req.pillarEndTile != null ? req.pillarEndTile : fallback;
+
+		if (depth <= 0 || (topBottomTile == null && endTile == null)) return;
+
+		if (depth == 1)
+		{
+			pillarTilemap.SetTile(new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z), topBottomTile);
+			return;
+		}
+
+		pillarTilemap.SetTile(new Vector3Int(gridPos.x, gridPos.y - 1, gridPos.z), topTile);
+		for (int i = 2; i < depth; i++)
+		{
+			pillarTilemap.SetTile(new Vector3Int(gridPos.x, gridPos.y - i, gridPos.z), middleTile);
+		}
+		pillarTilemap.SetTile(new Vector3Int(gridPos.x, gridPos.y - depth, gridPos.z), endTile);
+	}
+
+	public void RemovePillarsForFloor(Vector3Int gridPos, TileBase floorTile, Tilemap pillarTilemap)
+	{
+		TileResourceRequirement req = GetRequirement(floorTile);
+		if (req == null || pillarTilemap == null) return;
+
+		TileBase fallback = req.pillarTile;
+		var pillarTiles = new System.Collections.Generic.HashSet<TileBase>();
+		if (req.pillarTopBottomTile != null) pillarTiles.Add(req.pillarTopBottomTile);
+		if (req.pillarTopTile != null) pillarTiles.Add(req.pillarTopTile);
+		if (req.pillarMiddleTile != null) pillarTiles.Add(req.pillarMiddleTile);
+		if (req.pillarEndTile != null) pillarTiles.Add(req.pillarEndTile);
+		if (fallback != null) pillarTiles.Add(fallback);
+
+		const int maxPillarDepth = 5;
+		for (int i = 1; i <= maxPillarDepth; i++)
+		{
+			Vector3Int pos = new Vector3Int(gridPos.x, gridPos.y - i, gridPos.z);
+			TileBase t = pillarTilemap.GetTile(pos);
+			if (t == null || !pillarTiles.Contains(t)) break;
+			pillarTilemap.SetTile(pos, null);
+		}
+	}
+
 	public List<TileResourceRequirement> GetAllTileRequirements() => tileResourceRequirements;
 
 	public TileResourceRequirement GetRequirement(TileBase tile)
@@ -116,6 +167,18 @@ public class BuildingManager : MonoBehaviour
 		if (tile == null) return null;
 		requirementsDict.TryGetValue(tile, out var req);
 		return req;
+	}
+
+	public void MarkFloodFillDirty()
+	{
+		_floodFillDirty = true;
+	}
+
+	private void LateUpdate()
+	{
+		if (!_floodFillDirty) return;
+		_floodFillDirty = false;
+		RunFloodFill();
 	}
 
 	public void RunFloodFill()

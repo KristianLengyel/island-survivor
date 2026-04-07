@@ -1,32 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Shared inventory logic for any collection of InventorySlots.
-/// Used by InventoryManager (player) and Chest to eliminate duplicated stacking/spawning/serialization code.
-/// </summary>
 public class InventoryContainer
 {
 	private readonly InventorySlot[] slots;
 	private readonly int maxStackSize;
-	private readonly GameObject itemPrefab;
-	private readonly GameObject waterContainerPrefab;
 
 	public int SlotCount => slots.Length;
 	public int MaxStackSize => maxStackSize;
 
-	public InventoryContainer(InventorySlot[] slots, int maxStackSize, GameObject itemPrefab, GameObject waterContainerPrefab)
+	public InventoryContainer(InventorySlot[] slots, int maxStackSize)
 	{
 		this.slots = slots;
 		this.maxStackSize = maxStackSize;
-		this.itemPrefab = itemPrefab;
-		this.waterContainerPrefab = waterContainerPrefab;
 	}
 
 	public InventorySlot GetEmptySlot()
 	{
 		foreach (var slot in slots)
-			if (slot != null && slot.transform.childCount == 0)
+			if (slot != null && slot.IsEmpty)
 				return slot;
 		return null;
 	}
@@ -36,7 +28,7 @@ public class InventoryContainer
 		start = Mathf.Clamp(start, 0, slots.Length - 1);
 		end = Mathf.Clamp(end, 0, slots.Length - 1);
 		for (int i = start; i <= end; i++)
-			if (slots[i] != null && slots[i].transform.childCount == 0)
+			if (slots[i] != null && slots[i].IsEmpty)
 				return slots[i];
 		return null;
 	}
@@ -46,13 +38,12 @@ public class InventoryContainer
 		for (int i = 0; i < slots.Length; i++)
 		{
 			if (slots[i] == null) continue;
-			if (slots[i].GetComponentInChildren<InventoryItem>() == item)
+			if (slots[i].CurrentItem == item)
 				return i;
 		}
 		return -1;
 	}
 
-	// Returns the number of items actually added.
 	public int AddItemPartial(Item item, int count)
 	{
 		if (item == null || count <= 0) return 0;
@@ -62,7 +53,7 @@ public class InventoryContainer
 			int added = 0;
 			for (int i = 0; i < slots.Length && added < count; i++)
 			{
-				if (slots[i].GetComponentInChildren<InventoryItem>() != null) continue;
+				if (!slots[i].IsEmpty) continue;
 				SpawnItem(item, slots[i], 1);
 				added++;
 			}
@@ -75,7 +66,7 @@ public class InventoryContainer
 		{
 			for (int i = 0; i < slots.Length && remaining > 0; i++)
 			{
-				var slotItem = slots[i].GetComponentInChildren<InventoryItem>();
+				var slotItem = slots[i].CurrentItem;
 				if (slotItem != null && slotItem.item == item && slotItem.count < maxStackSize)
 				{
 					int space = maxStackSize - slotItem.count;
@@ -89,7 +80,7 @@ public class InventoryContainer
 
 		for (int i = 0; i < slots.Length && remaining > 0; i++)
 		{
-			if (slots[i].GetComponentInChildren<InventoryItem>() != null) continue;
+			if (!slots[i].IsEmpty) continue;
 			int place = item.stackable ? Mathf.Min(remaining, maxStackSize) : 1;
 			SpawnItem(item, slots[i], place);
 			remaining -= place;
@@ -108,16 +99,17 @@ public class InventoryContainer
 		foreach (var slot in slots)
 		{
 			if (remaining <= 0) break;
-			var slotItem = slot.GetComponentInChildren<InventoryItem>();
+			var slotItem = slot.CurrentItem;
 			if (slotItem == null || slotItem.item == null || slotItem.item.name != itemName || slotItem.count <= 0) continue;
 
 			int remove = Mathf.Min(remaining, slotItem.count);
 			slotItem.count -= remove;
-			slotItem.RefreshCount();
 			remaining -= remove;
 
 			if (slotItem.count <= 0)
-				Object.Destroy(slotItem.gameObject);
+				slot.ClearItem();
+			else
+				slotItem.RefreshCount();
 		}
 	}
 
@@ -129,8 +121,8 @@ public class InventoryContainer
 		{
 			var empty = GetEmptySlot();
 			if (empty == null) return false;
-			sourceItem.transform.SetParent(empty.transform, false);
-			sourceItem.transform.localPosition = Vector3.zero;
+			sourceItem.slot?.ClearItem();
+			empty.SetItem(sourceItem);
 			return true;
 		}
 
@@ -142,10 +134,10 @@ public class InventoryContainer
 			if (moved <= 0) return false;
 
 			sourceItem.count -= moved;
-			sourceItem.RefreshCount();
-
 			if (sourceItem.count <= 0)
-				Object.Destroy(sourceItem.gameObject);
+				sourceItem.slot?.ClearItem();
+			else
+				sourceItem.RefreshCount();
 
 			return true;
 		}
@@ -154,8 +146,8 @@ public class InventoryContainer
 		{
 			var empty = GetEmptySlot();
 			if (empty == null) return false;
-			sourceItem.transform.SetParent(empty.transform, false);
-			sourceItem.transform.localPosition = Vector3.zero;
+			sourceItem.slot?.ClearItem();
+			empty.SetItem(sourceItem);
 			return true;
 		}
 
@@ -172,7 +164,7 @@ public class InventoryContainer
 
 		for (int i = start; i <= end && remaining > 0; i++)
 		{
-			var slotItem = slots[i].GetComponentInChildren<InventoryItem>();
+			var slotItem = slots[i].CurrentItem;
 			if (slotItem != null && slotItem.item == item && slotItem.count < maxStackSize)
 			{
 				int space = maxStackSize - slotItem.count;
@@ -185,7 +177,7 @@ public class InventoryContainer
 
 		for (int i = start; i <= end && remaining > 0; i++)
 		{
-			if (slots[i].transform.childCount != 0) continue;
+			if (!slots[i].IsEmpty) continue;
 			int place = Mathf.Min(maxStackSize, remaining);
 			SpawnItem(item, slots[i], place);
 			remaining -= place;
@@ -200,38 +192,29 @@ public class InventoryContainer
 
 		if (item is WaterContainerItem wc)
 		{
-			if (waterContainerPrefab == null) return;
-			var go = Object.Instantiate(waterContainerPrefab, slot.transform);
-			var wii = go.GetComponent<WaterContainerInventoryItem>();
-			wii.InitialiseWaterContainer(wc);
-			wii.currentFill = 0;
-			wii.isSaltWater = false;
-			wii.UpdateSprite();
-			wii.count = 1;
-			wii.RefreshCount();
+			var wcItem = new WaterContainerInventoryItem();
+			wcItem.InitialiseWaterContainer(wc);
+			wcItem.count = 1;
+			slot.SetItem(wcItem);
 		}
 		else
 		{
-			if (itemPrefab == null) return;
-			var go = Object.Instantiate(itemPrefab, slot.transform);
-			var ii = go.GetComponent<InventoryItem>();
-			ii.InitialiseItem(item);
-			ii.count = count;
-			ii.RefreshCount();
+			var invItem = new InventoryItem();
+			invItem.InitialiseItem(item);
+			invItem.count = count;
+			slot.SetItem(invItem);
 		}
 	}
 
 	public void SpawnWaterContainer(WaterContainerItem wc, InventorySlot slot, int fill, bool isSaltWater)
 	{
-		if (wc == null || slot == null || waterContainerPrefab == null) return;
-		var go = Object.Instantiate(waterContainerPrefab, slot.transform);
-		var wii = go.GetComponent<WaterContainerInventoryItem>();
-		wii.InitialiseWaterContainer(wc);
-		wii.currentFill = Mathf.Clamp(fill, 0, wc.maxFillCapacity);
-		wii.isSaltWater = isSaltWater;
-		wii.UpdateSprite();
-		wii.count = 1;
-		wii.RefreshCount();
+		if (wc == null || slot == null) return;
+		var wcItem = new WaterContainerInventoryItem();
+		wcItem.InitialiseWaterContainer(wc);
+		wcItem.currentFill = Mathf.Clamp(fill, 0, wc.maxFillCapacity);
+		wcItem.isSaltWater = isSaltWater;
+		wcItem.count = 1;
+		slot.SetItem(wcItem);
 	}
 
 	public List<InventorySlotData> CaptureState()
@@ -239,7 +222,7 @@ public class InventoryContainer
 		var result = new List<InventorySlotData>(slots.Length);
 		for (int i = 0; i < slots.Length; i++)
 		{
-			var invItem = slots[i].GetComponentInChildren<InventoryItem>();
+			var invItem = slots[i].CurrentItem;
 			if (invItem == null)
 			{
 				result.Add(new InventorySlotData());
@@ -267,8 +250,7 @@ public class InventoryContainer
 	public void RestoreState(List<InventorySlotData> slotData, ItemDatabase itemDb)
 	{
 		foreach (var slot in slots)
-			for (int c = slot.transform.childCount - 1; c >= 0; c--)
-				Object.Destroy(slot.transform.GetChild(c).gameObject);
+			slot.ClearItem();
 
 		if (slotData == null) return;
 

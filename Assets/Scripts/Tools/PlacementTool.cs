@@ -18,6 +18,7 @@ public class PlacementTool : MonoBehaviour, IPlayerTool
 
 	[Header("Items")]
 	public Item catchingNetItem;
+	public Item waterPumpItem;
 
 	[Header("Settings")]
 	private const float OverlapRadius = 0.5f;
@@ -119,7 +120,8 @@ public class PlacementTool : MonoBehaviour, IPlayerTool
 		{
 			if (CanPlaceAtPosition(selectedItem, gridPos) &&
 				!IsPlaceableObjectAt(gridPos) &&
-				(selectedItem != catchingNetItem || IsNextToFloorTile(gridPos)))
+				(selectedItem != catchingNetItem || IsNextToFloorTile(gridPos)) &&
+				(selectedItem != waterPumpItem || IsNextToFloorTile(gridPos)))
 			{
 				PlacePrefab(gridPos, selectedItem.prefab, selectedItem.type == ItemType.PlaceableObjectWalkableOver);
 				canPlace = false;
@@ -241,7 +243,8 @@ public class PlacementTool : MonoBehaviour, IPlayerTool
 		bool shouldShow =
 			selectedItem != null &&
 			CanPlaceAtPosition(selectedItem, gridPos) &&
-			(selectedItem != catchingNetItem || IsNextToFloorTile(gridPos));
+			(selectedItem != catchingNetItem || IsNextToFloorTile(gridPos)) &&
+			(selectedItem != waterPumpItem || IsNextToFloorTile(gridPos));
 
 		if (shouldShow)
 		{
